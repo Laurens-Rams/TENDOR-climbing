@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c3ada2d85a48441fb9390ce3fab015d2
+timeCreated: 1654592730
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201106
+  packageName: AR Foundation Remote 2.0
+  packageVersion: 2.0.39-release.0
+  assetPath: Assets/Plugins/ARFoundationRemoteInstaller/Scripts/AssemblyInfo.cs
+  uploadId: 688692

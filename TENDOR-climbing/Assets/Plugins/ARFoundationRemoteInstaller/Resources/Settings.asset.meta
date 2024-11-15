@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d64a722fd147d4f188b2742c04f8b550
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201106
+  packageName: AR Foundation Remote 2.0
+  packageVersion: 2.0.39-release.0
+  assetPath: Assets/Plugins/ARFoundationRemoteInstaller/Resources/Settings.asset
+  uploadId: 688692

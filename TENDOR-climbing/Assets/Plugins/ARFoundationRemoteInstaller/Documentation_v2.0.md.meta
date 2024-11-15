@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ad01d2399363463bb16a3d5fa56d98a
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201106
+  packageName: AR Foundation Remote 2.0
+  packageVersion: 2.0.39-release.0
+  assetPath: Assets/Plugins/ARFoundationRemoteInstaller/Documentation_v2.0.md
+  uploadId: 688692

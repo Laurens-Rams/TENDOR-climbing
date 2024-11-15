@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fe7436b388a8c469d9a9fcf92ecf0083
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201106
+  packageName: AR Foundation Remote 2.0
+  packageVersion: 2.0.39-release.0
+  assetPath: Assets/Plugins/ARFoundationRemoteInstaller/Resources/SessionRecordings.asset
+  uploadId: 688692

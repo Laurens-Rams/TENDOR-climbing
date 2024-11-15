@@ -1,15 +1,14 @@
 ﻿using UnityEngine;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System;
 
 public class TrackingLogic : MonoBehaviour
 {
-    private TargetContent[] contents;
+    private Content[] contents;
 
     void OnEnable()
     {
-        contents = GetComponentsInChildren<TargetContent>(true);
+        contents = GetComponentsInChildren<Content>(true);
         Globals.ARTrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
     }
 
@@ -21,21 +20,25 @@ public class TrackingLogic : MonoBehaviour
     void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
     {
         foreach (var trackedImage in eventArgs.added)
-            if (TryActivateContent(trackedImage.referenceImage.name))
+            if (TryActivateContent(trackedImage))
                 break;
 
-        foreach (var trackedImage in eventArgs.updated)
-            if (trackedImage.trackingState == TrackingState.Tracking && TryActivateContent(trackedImage.referenceImage.name))
-                break;
+        //foreach (var trackedImage in eventArgs.updated)
+        //    if (trackedImage.trackingState == TrackingState.Tracking && ...)
+        //        break;
     }
 
-    private bool TryActivateContent(string imageName)
+    private bool TryActivateContent(ARTrackedImage image)
     {
-        var content = Array.Find(contents, content => content.name == imageName);
+        var content = image ? Array.Find(contents, content => content.name == image.referenceImage.name) : null;
         if (!content)
             return false;
 
-        // Trigger content detected action
+        content.transform.parent = image.transform;
+        content.transform.localPosition = new Vector3(0f, 25f, 0f);
+        content.transform.localRotation = Quaternion.Euler(new Vector3(90f, 0f, 0f));
+        content.transform.localScale = Vector3.one;
+        content.Show();
         return true;
     }
 }
