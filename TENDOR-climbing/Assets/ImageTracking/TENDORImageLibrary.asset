@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 848409ee8ba454f42a5ddff137688a27, type: 3}
-  m_Name: ReferenceImageLibrary
+  m_Name: TENDORImageLibrary
   m_EditorClassIdentifier: 
   m_GuidLow: 5078416786209931450
   m_GuidHigh: 18395104058814357161
@@ -23,7 +23,17 @@ MonoBehaviour:
     m_SerializedTextureGuid:
       m_GuidLow: 16853733463898470839
       m_GuidHigh: 2473980744791245194
-    m_Size: {x: 25, y: 44.444443}
+    m_Size: {x: 0.25, y: 0.44444445}
     m_SpecifySize: 1
     m_Name: Wall 1
+    m_Texture: {fileID: 0}
+  - m_SerializedGuid:
+      m_GuidLow: 4645856376928230692
+      m_GuidHigh: 2405561633568426425
+    m_SerializedTextureGuid:
+      m_GuidLow: 14827129282461345971
+      m_GuidHigh: 14243195904478369386
+    m_Size: {x: 0.2, y: 0.2}
+    m_SpecifySize: 1
+    m_Name: Cat
     m_Texture: {fileID: 0}

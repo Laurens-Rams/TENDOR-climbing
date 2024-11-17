@@ -7,12 +7,12 @@ public class DeepMotionContent : Content
 
     public override void Show()
     {
-        fbx?.gameObject.SetActive(true);
+        gameObject.SetActive(true);
     }
 
     public override void Hide()
     {
-        fbx?.gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
 
     public override void Play()

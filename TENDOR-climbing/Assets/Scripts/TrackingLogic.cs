@@ -25,7 +25,6 @@ public class TrackingLogic : MonoBehaviour
 
         //foreach (var trackedImage in eventArgs.updated)
         //    if (trackedImage.trackingState == TrackingState.Tracking && ...)
-        //        break;
     }
 
     private bool TryActivateContent(ARTrackedImage image)
@@ -35,9 +34,9 @@ public class TrackingLogic : MonoBehaviour
             return false;
 
         content.transform.parent = image.transform;
-        content.transform.localPosition = new Vector3(0f, 25f, 0f);
-        content.transform.localRotation = Quaternion.Euler(new Vector3(90f, 0f, 0f));
-        content.transform.localScale = Vector3.one;
+        content.transform.localPosition = Vector3.zero;
+        content.transform.localRotation = Quaternion.identity;
+        //content.transform.localScale = new Vector3(1f / image.referenceImage.width, 1f, 1f / image.referenceImage.height);
         content.Show();
         return true;
     }
