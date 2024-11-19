@@ -137,6 +137,7 @@ MonoBehaviour:
   m_depthSubmissionMode: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
+  versionChanged: 0
 --- !u!114 &-2280575137759796942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -224,6 +225,7 @@ MonoBehaviour:
   m_depthSubmissionMode: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
+  versionChanged: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
