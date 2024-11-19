@@ -27,17 +27,16 @@ public class TrackingLogic : MonoBehaviour
         //    if (trackedImage.trackingState == TrackingState.Tracking && ...)
     }
 
-    private bool TryActivateContent(ARTrackedImage image)
+    private bool TryActivateContent(ARTrackedImage trackedImage)
     {
-        var content = image ? Array.Find(contents, content => content.name == image.referenceImage.name) : null;
+        var content = trackedImage ? Array.Find(contents, content => content.name == trackedImage.referenceImage.name) : null;
         if (!content)
             return false;
 
-        content.transform.parent = image.transform;
+        content.transform.parent = trackedImage.transform;
         content.transform.localPosition = Vector3.zero;
         content.transform.localRotation = Quaternion.identity;
-        //content.transform.localScale = new Vector3(1f / image.referenceImage.width, 1f, 1f / image.referenceImage.height);
-        content.Show();
+        content.Show(trackedImage);
         return true;
     }
 }
