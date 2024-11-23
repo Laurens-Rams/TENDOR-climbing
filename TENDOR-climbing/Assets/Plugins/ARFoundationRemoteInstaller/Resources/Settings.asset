@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd607c3f010ab45a29ecfcf8d5a898ef, type: 3}
   m_Name: Settings
   m_EditorClassIdentifier: 
-  ARCompanionAppIP: 192.168.68.105
+  ARCompanionAppIP: 10.154.134.131
   arCompanionSettings:
     cameraVideoSettings:
       enableVideo: 1
@@ -35,7 +35,7 @@ MonoBehaviour:
     normalLatency: 0.2
     targetFrameRate: 30
   editorGameViewSettings:
-    resolutionScale: 0.33333334
+    resolutionScale: 0.709
     maxEditorViewFps: 10
   packages:
   - displayName: AR Foundation Remote
@@ -61,7 +61,7 @@ MonoBehaviour:
     overrideDisplayMatrix: 0
     displayMatrix:
       e00: 0
-      e01: -0.6150235
+      e01: -0.61576355
       e02: 0
       e03: 0
       e10: -1
@@ -69,7 +69,7 @@ MonoBehaviour:
       e12: 0
       e13: 0
       e20: 1
-      e21: 0.80751175
+      e21: 0.8078818
       e22: 1
       e23: 0
       e30: 0
@@ -78,13 +78,13 @@ MonoBehaviour:
       e33: 1
     overrideProjectionMatrix: 0
     projectionMatrix:
-      e00: 3.152687
+      e00: 3.3395076
       e01: 0
-      e02: 0.008917272
+      e02: 0.008205175
       e03: 0
       e10: 0
-      e11: 1.4542323
-      e12: 0.0019681454
+      e11: 1.5422603
+      e12: -0.02189529
       e13: 0
       e20: 0
       e21: 0

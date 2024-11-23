@@ -7,8 +7,8 @@ public class MoveScaler : MonoBehaviour
     [SerializeField] private float rangeX = 1f;
     [SerializeField] private float rangeY = 1f;
     [SerializeField] private float rangeZ = 1f;
-    [SerializeField] private float minScale = 0.5f;
-    [SerializeField] private float maxScale = 1.25f;
+    [SerializeField] private float minScale = 1f;
+    [SerializeField] private float maxScale = 4f;
 
     // Start is called before the first frame update
     void Start()
@@ -30,7 +30,7 @@ public class MoveScaler : MonoBehaviour
         if (!target)
             return;
 
-        var y = (-1f + 2f * value) * rangeY;
+        var y = (-2f + 2f * value) * rangeY;
         target.localPosition = new Vector3(target.localPosition.x, y, target.localPosition.z);
     }
 
