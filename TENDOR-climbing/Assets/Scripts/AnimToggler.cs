@@ -24,7 +24,7 @@ public class AnimToggler : MonoBehaviour
         transform.localPosition = startPos;
         transform.localRotation = startRot;
 
-        animator.Play("climb_app", -1, 0f);
+        animator.Play("IMG_36822", -1, 0f);
         animator.speed = 0f;
     }
 }
