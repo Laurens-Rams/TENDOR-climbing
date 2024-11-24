@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using System;
+using System.Collections.Generic;
 
 public class TrackingLogic : MonoBehaviour
 {
@@ -9,12 +10,12 @@ public class TrackingLogic : MonoBehaviour
     void OnEnable()
     {
         contents = GetComponentsInChildren<Content>(true);
-        Globals.ARTrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
+        Globals.TrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
     }
 
     void OnDisable()
     {
-        Globals.ARTrackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
+        Globals.TrackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
     }
 
     void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
@@ -36,7 +37,25 @@ public class TrackingLogic : MonoBehaviour
         content.transform.parent = trackedImage.transform;
         content.transform.localPosition = Vector3.zero;
         content.transform.localRotation = Quaternion.identity;
+
+        var ray = new Ray(Globals.XROrigin.Camera.transform.position, (trackedImage.transform.position - Globals.XROrigin.Camera.transform.position).normalized);
+        var hits = new List<ARRaycastHit>();
+        Globals.RaycastManager.Raycast(ray, hits, UnityEngine.XR.ARSubsystems.TrackableType.Planes);
+        if (hits.Count > 0)
+        {
+            foreach (var hit in hits)
+            {
+                var plane = hit.trackable as ARPlane;
+                if (plane.alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical)
+                {
+                    content.transform.parent = plane.transform;
+                    break;
+                }
+            }
+        }
+
         content.Show(trackedImage);
+
         return true;
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 public class AnimToggler : MonoBehaviour
 {
     [SerializeField] private Animator animator;
+    [SerializeField] string animName;
 
     private Vector3 startPos;
     private Quaternion startRot;
@@ -24,7 +25,7 @@ public class AnimToggler : MonoBehaviour
         transform.localPosition = startPos;
         transform.localRotation = startRot;
 
-        animator.Play("climb_app", -1, 0f);
+        animator.Play(animName, -1, 0f);
         animator.speed = 0f;
     }
 }
