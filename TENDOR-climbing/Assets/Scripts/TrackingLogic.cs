@@ -49,6 +49,8 @@ public class TrackingLogic : MonoBehaviour
                 if (plane.alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical)
                 {
                     content.transform.parent = plane.transform;
+                    content.transform.localPosition = Vector3.zero;
+                    content.transform.localRotation = Quaternion.identity;
                     break;
                 }
             }
