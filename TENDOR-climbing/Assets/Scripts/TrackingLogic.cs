@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using System;
 using System.Collections.Generic;
 
@@ -24,8 +25,9 @@ public class TrackingLogic : MonoBehaviour
             if (TryActivateContent(trackedImage))
                 break;
 
-        //foreach (var trackedImage in eventArgs.updated)
-        //    if (trackedImage.trackingState == TrackingState.Tracking && ...)
+        foreach (var trackedImage in eventArgs.updated)
+            if (trackedImage.trackingState == TrackingState.Tracking && TryActivateContent(trackedImage))
+                break;
     }
 
     private bool TryActivateContent(ARTrackedImage trackedImage)
