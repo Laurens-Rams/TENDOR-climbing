@@ -8,7 +8,7 @@ public class DeepMotionContent : Content
 
     public override void Show(ARTrackedImage trackedImage)
     {
-        image.localScale = new Vector3(trackedImage.size.x, trackedImage.size.y, 1f);
+       // image.localScale = new Vector3(trackedImage.size.x, trackedImage.size.y, 1f);
         gameObject.SetActive(true);
         Globals.UI.SetActive(true);
     }
