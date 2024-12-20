@@ -8,6 +8,7 @@ public class Globals : MonoBehaviour
     public static XROrigin XROrigin;
     public static ARTrackedImageManager TrackedImageManager;
     public static ARRaycastManager RaycastManager;
+    public static ARCameraManager CameraManager;
     public static GameObject UI;
 
     [SerializeField]
@@ -17,6 +18,8 @@ public class Globals : MonoBehaviour
     [SerializeField]
     private ARRaycastManager raycastManager;
     [SerializeField]
+    private ARCameraManager cameraManager;
+    [SerializeField]
     private GameObject ui;
 
     void Awake()
@@ -24,6 +27,7 @@ public class Globals : MonoBehaviour
         XROrigin = xrOrigin;
         TrackedImageManager = trackedImageManager;
         RaycastManager = raycastManager;
+        CameraManager = cameraManager;
         UI = ui;
     }
 }
