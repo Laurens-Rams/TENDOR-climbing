@@ -9,6 +9,7 @@ public class Globals : MonoBehaviour
     public static ARTrackedImageManager TrackedImageManager;
     public static ARRaycastManager RaycastManager;
     public static ARCameraManager CameraManager;
+    public static FileUploader FileUploader;
     public static GameObject UI;
 
     [SerializeField]
@@ -20,6 +21,8 @@ public class Globals : MonoBehaviour
     [SerializeField]
     private ARCameraManager cameraManager;
     [SerializeField]
+    private FileUploader fileUploader;
+    [SerializeField]
     private GameObject ui;
 
     void Awake()
@@ -28,6 +31,8 @@ public class Globals : MonoBehaviour
         TrackedImageManager = trackedImageManager;
         RaycastManager = raycastManager;
         CameraManager = cameraManager;
+        FileUploader = fileUploader;
+
         UI = ui;
     }
 }

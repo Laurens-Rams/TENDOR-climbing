@@ -1,4 +1,20 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "VideoKit",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "ai.videokit"
+      ]
+    },
+    {
+      "name": "Function",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "ai.fxn"
+      ]
+    }
+  ],
   "dependencies": {
     "com.kyrylokuzyk.arfoundationremote": "file:../Assets/Plugins/ARFoundationRemoteInstaller/com.kyrylokuzyk.arfoundationremote.tgz",
     "com.unity.ide.visualstudio": "2.0.22",

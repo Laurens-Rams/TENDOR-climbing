@@ -1,60 +1,118 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using OpenCVForUnity.CoreModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.VideoioModule;
+using TMPro;
+using RenderHeads.Media.AVProMovieCapture;
+using System;
+using System.Collections;
 
 public class VideoRecorder : MonoBehaviour
 {
+    //[SerializeField]
+    //private string path = "/video.mp4";
+
     [SerializeField]
-    private string path = "/video.avi";
+    private TextMeshProUGUI tmpFrames;
+
+    [SerializeField]
+    private CaptureFromTexture capture;
 
     public Texture2D tex;
-    public Mat mat;
 
+    //private string fullPath;
     private XRCpuImage cpuImage;
-    private VideoWriter writer;
 
-    void OnEnable()
+    IEnumerator Start()
     {
-        Init();
-        Globals.CameraManager.frameReceived += RecordFrame;
+#if (UNITY_STANDALONE_OSX || UNITY_IOS) && !UNITY_EDITOR
+    CaptureBase.PhotoLibraryAccessLevel photoLibraryAccessLevel = CaptureBase.PhotoLibraryAccessLevel.AddOnly;
+
+    // If we're trying to write to the photo library, make sure we have permission
+    if (capture.OutputFolder == CaptureBase.OutputPath.PhotoLibrary)
+    {
+        // Album creation (album name is taken from the output folder path) requires read write access.
+        if (capture.OutputFolderPath != null && capture.OutputFolderPath.Length > 0)
+            photoLibraryAccessLevel = CaptureBase.PhotoLibraryAccessLevel.ReadWrite;
+
+        switch (CaptureBase.HasUserAuthorisationToAccessPhotos(photoLibraryAccessLevel))
+        {
+            case CaptureBase.PhotoLibraryAuthorisationStatus.Authorised:
+                // All good, nothing to do
+                break;
+
+            case CaptureBase.PhotoLibraryAuthorisationStatus.Unavailable:
+                Debug.LogWarning("The photo library is unavailable, will use RelativeToPeristentData instead");
+                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                break;
+
+            case CaptureBase.PhotoLibraryAuthorisationStatus.Denied:
+                // User has denied access, change output path
+                Debug.LogWarning("User has denied access to the photo library, will use RelativeToPeristentData instead");
+                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                break;
+
+            case CaptureBase.PhotoLibraryAuthorisationStatus.NotDetermined:
+                // Need to ask permission
+                yield return CaptureBase.RequestUserAuthorisationToAccessPhotos(photoLibraryAccessLevel);
+                // Nested switch, everbodies favourite
+                switch (CaptureBase.HasUserAuthorisationToAccessPhotos(photoLibraryAccessLevel))
+                {
+                    case CaptureBase.PhotoLibraryAuthorisationStatus.Authorised:
+                        // All good, nothing to do
+                        break;
+
+                    case CaptureBase.PhotoLibraryAuthorisationStatus.Denied:
+                        // User has denied access, change output path
+                        Debug.LogWarning("User has denied access to the photo library, will use RelativeToPeristentData instead");
+                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                        break;
+
+                    case CaptureBase.PhotoLibraryAuthorisationStatus.NotDetermined:
+                        // We were unable to request access for some reason, check the logs for any error information
+                        Debug.LogWarning("Authorisation to access the photo library is still undetermined, will use RelativeToPeristentData instead");
+                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                        break;
+                }
+                break;
+        }
+    }
+#endif
+        yield return null;
     }
 
-    void OnDisable()
+    public void StartRecording()
     {
-        Globals.CameraManager.frameReceived -= RecordFrame;
+        tex = new Texture2D((int)Globals.CameraManager.currentConfiguration?.width, (int)Globals.CameraManager.currentConfiguration?.height, TextureFormat.RGBA32, false);
+        capture.SetSourceTexture(tex);
+        capture.StartCapture();
 
-        writer.release();
-        cpuImage.Dispose();
-        mat.Dispose();
+        tmpFrames.text = "0";
+        Globals.CameraManager.frameReceived += RecordFrameVK;
     }
 
-    private void Init()
+    public void StopRecording()
     {
-        int h = (int)Globals.CameraManager.currentConfiguration?.height;
-        int w = (int)Globals.CameraManager.currentConfiguration?.width;
+        Globals.CameraManager.frameReceived -= RecordFrameVK;
+        capture.StopCapture();
 
-        tex = new Texture2D(w, h, TextureFormat.RGB24, false);
-        mat = new Mat(h, w, CvType.CV_8UC3);
-
-        writer = new VideoWriter();
-        writer.open(Application.persistentDataPath + path, Videoio.CAP_OPENCV_MJPEG, VideoWriter.fourcc('M', 'J', 'P', 'G'), 30, new Size(w, h));
+        //byte[] bytes = File.ReadAllBytes(fullPath);
+        //Globals.FileUploader.StartUpload(bytes);
     }
 
-    private void RecordFrame(ARCameraFrameEventArgs args)
+    private void RecordFrameVK(ARCameraFrameEventArgs args)
     {
         if (!Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage))
             return;
 
-        var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGB24, XRCpuImage.Transformation.MirrorY);
+        var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, XRCpuImage.Transformation.MirrorY);
         var data = tex.GetRawTextureData<byte>();
         cpuImage.Convert(conversionParams, data);
 
         tex.Apply();
-        Utils.texture2DToMat(tex, mat);
-        writer.write(mat);
+        capture.UpdateSourceTexture();
         cpuImage.Dispose();
+
+        int frames = Int32.Parse(tmpFrames.text);
+        tmpFrames.text = (frames + 1).ToString();
     }
 }
