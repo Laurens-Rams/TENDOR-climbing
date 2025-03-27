@@ -1,17 +1,14 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using UnityEngine.UI;
 using TMPro;
 using RenderHeads.Media.AVProMovieCapture;
 using System;
 using System.Collections;
-using UnityEngine.UI;
 
 public class VideoRecorder : MonoBehaviour
 {
-    //[SerializeField]
-    //private string path = "/video.mp4";
-
     [SerializeField]
     private TextMeshProUGUI tmpFrames;
 
@@ -114,8 +111,8 @@ public class VideoRecorder : MonoBehaviour
         cpuImage.Convert(conversionParams, data);
 
         tex.Apply();
-        capture.UpdateFrame();
         capture.UpdateSourceTexture();
+        capture.UpdateFrame();
         cpuImage.Dispose();
 
         int frames = Int32.Parse(tmpFrames.text);
