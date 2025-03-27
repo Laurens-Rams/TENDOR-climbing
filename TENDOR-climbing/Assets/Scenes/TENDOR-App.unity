@@ -3050,99 +3050,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 451820663}
   m_CullTransparentMesh: 1
---- !u!1 &502040741
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 502040743}
-  - component: {fileID: 502040742}
-  m_Layer: 0
-  m_Name: Directional Light (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!108 &502040742
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 502040741}
-  m_Enabled: 1
-  serializedVersion: 11
-  m_Type: 2
-  m_Color: {r: 0.71084017, g: 0.8683488, b: 0.9245283, a: 1}
-  m_Intensity: 5
-  m_Range: 10.22719
-  m_SpotAngle: 55
-  m_InnerSpotAngle: 1
-  m_CookieSize: 30
-  m_Shadows:
-    m_Type: 2
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 2
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!4 &502040743
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 502040741}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.55506825, y: -0.43163043, z: 0.48916784, w: 0.51605165}
-  m_LocalPosition: {x: 0.14, y: 5.39, z: 4.13}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 84.365, y: 83.457, z: 164.826}
 --- !u!1 &508700756
 GameObject:
   m_ObjectHideFlags: 0
@@ -3875,280 +3782,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 643047279}
   m_CullTransparentMesh: 1
---- !u!1 &672847640
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 672847641}
-  - component: {fileID: 672847642}
-  m_Layer: 0
-  m_Name: Texture Recorder
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &672847641
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 672847640}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 28.366467, y: -4.5098453, z: 9.802572}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1368426777}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &672847642
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 672847640}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de5a7a2f274da2340a2de24a1fffee45, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _encoderHintsWindows:
-    videoHints:
-      averageBitrate: 0
-      maximumBitrate: 0
-      quality: 1
-      keyframeInterval: 0
-      allowFastStartStreamingPostProcess: 1
-      supportTransparency: 0
-      useHardwareEncoding: 1
-      enableConstantQuality: 0
-      enableFragmentedWriting: 0
-      androidNoCaptureRotation: 0
-      iOSSaveCaptureWhenAppLosesFocus: 1
-      padding: 0
-      injectStereoPacking: 1
-      stereoPacking: 0
-      injectSphericalVideoLayout: 1
-      sphericalVideoLayout: 0
-      movieFragmentInterval: 120
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-      colourRange: 0
-      realtimeFramePresentationTimestampOptions: 0
-      orientationMetadata: 0
-    imageHints:
-      quality: 0.85
-      supportTransparency: 0
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-  _encoderHintsMacOS:
-    videoHints:
-      averageBitrate: 0
-      maximumBitrate: 0
-      quality: 1
-      keyframeInterval: 0
-      allowFastStartStreamingPostProcess: 1
-      supportTransparency: 0
-      useHardwareEncoding: 1
-      enableConstantQuality: 0
-      enableFragmentedWriting: 0
-      androidNoCaptureRotation: 0
-      iOSSaveCaptureWhenAppLosesFocus: 1
-      padding: 0
-      injectStereoPacking: 1
-      stereoPacking: 0
-      injectSphericalVideoLayout: 1
-      sphericalVideoLayout: 0
-      movieFragmentInterval: 120
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-      colourRange: 0
-      realtimeFramePresentationTimestampOptions: 0
-      orientationMetadata: 0
-    imageHints:
-      quality: 0.85
-      supportTransparency: 0
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-  _encoderHintsIOS:
-    videoHints:
-      averageBitrate: 0
-      maximumBitrate: 0
-      quality: 1
-      keyframeInterval: 0
-      allowFastStartStreamingPostProcess: 1
-      supportTransparency: 0
-      useHardwareEncoding: 1
-      enableConstantQuality: 0
-      enableFragmentedWriting: 0
-      androidNoCaptureRotation: 0
-      iOSSaveCaptureWhenAppLosesFocus: 1
-      padding: 0
-      injectStereoPacking: 1
-      stereoPacking: 0
-      injectSphericalVideoLayout: 1
-      sphericalVideoLayout: 0
-      movieFragmentInterval: 120
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-      colourRange: 0
-      realtimeFramePresentationTimestampOptions: 0
-      orientationMetadata: 0
-    imageHints:
-      quality: 0.85
-      supportTransparency: 0
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-  _encoderHintsAndroid:
-    videoHints:
-      averageBitrate: 0
-      maximumBitrate: 0
-      quality: 1
-      keyframeInterval: 0
-      allowFastStartStreamingPostProcess: 1
-      supportTransparency: 0
-      useHardwareEncoding: 1
-      enableConstantQuality: 0
-      enableFragmentedWriting: 0
-      androidNoCaptureRotation: 0
-      iOSSaveCaptureWhenAppLosesFocus: 1
-      padding: 0
-      injectStereoPacking: 1
-      stereoPacking: 0
-      injectSphericalVideoLayout: 1
-      sphericalVideoLayout: 0
-      movieFragmentInterval: 120
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-      colourRange: 0
-      realtimeFramePresentationTimestampOptions: 0
-      orientationMetadata: 0
-    imageHints:
-      quality: 0.85
-      supportTransparency: 0
-      colourSpace: -1
-      sourceWidth: 0
-      sourceHeight: 0
-      transparency: 0
-      androidVulkanPreTransform: 0
-  _captureKey: 0
-  _isRealTime: 1
-  _persistAcrossSceneLoads: 0
-  _startTrigger: 0
-  _startDelay: 0
-  _startDelaySeconds: 0
-  _stopMode: 0
-  _stopFrames: 0
-  _stopSeconds: 0
-  _pauseCaptureOnAppPause: 1
-  _videoCodecPriorityWindows:
-  - H264
-  - HEVC
-  - Lagarith Lossless Codec
-  - Uncompressed
-  - x264vfw - H.264/MPEG-4 AVC codec
-  - Xvid MPEG-4 Codec
-  _videoCodecPriorityMacOS:
-  - H264
-  - HEVC
-  - Apple ProRes 422
-  - Apple ProRes 4444
-  _videoCodecPriorityAndroid:
-  - H264
-  - HEVC
-  _audioCodecPriorityWindows:
-  - AAC
-  - FLAC
-  - Uncompressed
-  _audioCodecPriorityMacOS:
-  - AAC
-  - FLAC
-  - Apple Lossless
-  - Linear PCM
-  - Uncompresssed
-  _audioCodecPriorityAndroid:
-  - AAC
-  _frameRate: 30
-  _timelapseScale: 1
-  _frameUpdateMode: 0
-  _downScale: 1
-  _maxVideoSize: {x: 0, y: 0}
-  _forceVideoCodecIndexWindows: -1
-  _forceVideoCodecIndexMacOS: 0
-  _forceVideoCodecIndexIOS: 0
-  _forceVideoCodecIndexAndroid: 0
-  _forceAudioCodecIndexWindows: -1
-  _forceAudioCodecIndexMacOS: 0
-  _forceAudioCodecIndexIOS: 0
-  _forceAudioCodecIndexAndroid: -1
-  _flipVertically: 0
-  _forceGpuFlush: 0
-  _useWaitForEndOfFrame: 1
-  _androidUpdateMediaGallery: 1
-  _androidNoCaptureRotation: 0
-  _iOSSaveCaptureWhenAppLosesFocus: 1
-  _logCaptureStartStop: 1
-  _audioCaptureSource: 0
-  _unityAudioCapture: {fileID: 0}
-  _forceAudioInputDeviceIndex: 0
-  _manualAudioSampleRate: 48000
-  _manualAudioChannelCount: 2
-  _outputTarget: 0
-  _outputFolderType: 6
-  _outputFolderPath: 
-  _filenamePrefix: MovieCapture
-  _appendFilenameTimestamp: 1
-  _allowManualFileExtension: 0
-  _filenameExtension: mp4
-  _namedPipePath: \\.\pipe\test_pipe
-  _writeOrientationMetadata: 0
-  _imageSequenceStartFrame: 0
-  _imageSequenceZeroDigits: 6
-  _imageSequenceFormatWindows: 0
-  _imageSequenceFormatMacOS: 0
-  _imageSequenceFormatIOS: 0
-  _imageSequenceFormatAndroid: 0
-  _renderResolution: 19
-  _renderSize: {x: 1, y: 1}
-  _renderAntiAliasing: -1
-  _useMotionBlur: 0
-  _motionBlurSamples: 16
-  _motionBlurCameras: []
-  _motionBlur: {fileID: 0}
-  _allowVSyncDisable: 1
-  _supportTextureRecreate: 0
-  _minimumDiskSpaceMB: -1
-  _timelineController: {fileID: 0}
-  _videoPlayerController: {fileID: 0}
-  _manualUpdate: 1
 --- !u!1 &677701992
 GameObject:
   m_ObjectHideFlags: 0
@@ -5814,6 +5447,78 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000206183}
   m_CullTransparentMesh: 1
+--- !u!1 &1005728422
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1005728423}
+  - component: {fileID: 1005728425}
+  - component: {fileID: 1005728424}
+  m_Layer: 5
+  m_Name: RawImage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1005728423
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1005728422}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1800202686}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 500}
+  m_SizeDelta: {x: 500, y: 500}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1005728424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1005728422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Texture: {fileID: 0}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+--- !u!222 &1005728425
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1005728422}
+  m_CullTransparentMesh: 1
 --- !u!1 &1012656991
 GameObject:
   m_ObjectHideFlags: 0
@@ -5839,12 +5544,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1012656991}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1368426777}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1012656993
 MonoBehaviour:
@@ -7744,7 +7449,8 @@ Transform:
   m_Children:
   - {fileID: 13289332}
   - {fileID: 1179582791}
-  - {fileID: 672847641}
+  - {fileID: 1700931098}
+  - {fileID: 1012656992}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1374157835
@@ -9689,6 +9395,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1700931098}
   - component: {fileID: 1700931097}
+  - component: {fileID: 1700931099}
   m_Layer: 0
   m_Name: Video Recorder
   m_TagString: Untagged
@@ -9709,7 +9416,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tmpFrames: {fileID: 1523216733}
-  capture: {fileID: 672847642}
+  image: {fileID: 1005728424}
+  capture: {fileID: 1700931099}
   tex: {fileID: 0}
 --- !u!4 &1700931098
 Transform:
@@ -9719,13 +9427,255 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1700931096}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 28.366467, y: -4.5098453, z: 9.802572}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1368426777}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1700931099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700931096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5a7a2f274da2340a2de24a1fffee45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _encoderHintsWindows:
+    videoHints:
+      averageBitrate: 0
+      maximumBitrate: 0
+      quality: 1
+      keyframeInterval: 0
+      allowFastStartStreamingPostProcess: 1
+      supportTransparency: 0
+      useHardwareEncoding: 1
+      enableConstantQuality: 0
+      enableFragmentedWriting: 0
+      androidNoCaptureRotation: 0
+      iOSSaveCaptureWhenAppLosesFocus: 1
+      padding: 0
+      injectStereoPacking: 1
+      stereoPacking: 0
+      injectSphericalVideoLayout: 1
+      sphericalVideoLayout: 0
+      movieFragmentInterval: 120
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+      colourRange: 0
+      realtimeFramePresentationTimestampOptions: 0
+      orientationMetadata: 0
+    imageHints:
+      quality: 0.85
+      supportTransparency: 0
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+  _encoderHintsMacOS:
+    videoHints:
+      averageBitrate: 0
+      maximumBitrate: 0
+      quality: 1
+      keyframeInterval: 0
+      allowFastStartStreamingPostProcess: 1
+      supportTransparency: 0
+      useHardwareEncoding: 1
+      enableConstantQuality: 0
+      enableFragmentedWriting: 0
+      androidNoCaptureRotation: 0
+      iOSSaveCaptureWhenAppLosesFocus: 1
+      padding: 0
+      injectStereoPacking: 1
+      stereoPacking: 0
+      injectSphericalVideoLayout: 1
+      sphericalVideoLayout: 0
+      movieFragmentInterval: 120
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+      colourRange: 0
+      realtimeFramePresentationTimestampOptions: 0
+      orientationMetadata: 0
+    imageHints:
+      quality: 0.85
+      supportTransparency: 0
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+  _encoderHintsIOS:
+    videoHints:
+      averageBitrate: 0
+      maximumBitrate: 0
+      quality: 1
+      keyframeInterval: 0
+      allowFastStartStreamingPostProcess: 1
+      supportTransparency: 0
+      useHardwareEncoding: 1
+      enableConstantQuality: 0
+      enableFragmentedWriting: 0
+      androidNoCaptureRotation: 0
+      iOSSaveCaptureWhenAppLosesFocus: 1
+      padding: 0
+      injectStereoPacking: 1
+      stereoPacking: 0
+      injectSphericalVideoLayout: 1
+      sphericalVideoLayout: 0
+      movieFragmentInterval: 120
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+      colourRange: 0
+      realtimeFramePresentationTimestampOptions: 0
+      orientationMetadata: 0
+    imageHints:
+      quality: 0.85
+      supportTransparency: 0
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+  _encoderHintsAndroid:
+    videoHints:
+      averageBitrate: 0
+      maximumBitrate: 0
+      quality: 1
+      keyframeInterval: 0
+      allowFastStartStreamingPostProcess: 1
+      supportTransparency: 0
+      useHardwareEncoding: 1
+      enableConstantQuality: 0
+      enableFragmentedWriting: 0
+      androidNoCaptureRotation: 0
+      iOSSaveCaptureWhenAppLosesFocus: 1
+      padding: 0
+      injectStereoPacking: 1
+      stereoPacking: 0
+      injectSphericalVideoLayout: 1
+      sphericalVideoLayout: 0
+      movieFragmentInterval: 120
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+      colourRange: 0
+      realtimeFramePresentationTimestampOptions: 0
+      orientationMetadata: 0
+    imageHints:
+      quality: 0.85
+      supportTransparency: 0
+      colourSpace: -1
+      sourceWidth: 0
+      sourceHeight: 0
+      transparency: 0
+      androidVulkanPreTransform: 0
+  _captureKey: 0
+  _isRealTime: 0
+  _persistAcrossSceneLoads: 0
+  _startTrigger: 0
+  _startDelay: 0
+  _startDelaySeconds: 0
+  _stopMode: 0
+  _stopFrames: 0
+  _stopSeconds: 0
+  _pauseCaptureOnAppPause: 1
+  _videoCodecPriorityWindows:
+  - H264
+  - HEVC
+  - Lagarith Lossless Codec
+  - Uncompressed
+  - x264vfw - H.264/MPEG-4 AVC codec
+  - Xvid MPEG-4 Codec
+  _videoCodecPriorityMacOS:
+  - H264
+  - HEVC
+  - Apple ProRes 422
+  - Apple ProRes 4444
+  _videoCodecPriorityAndroid:
+  - H264
+  - HEVC
+  _audioCodecPriorityWindows:
+  - AAC
+  - FLAC
+  - Uncompressed
+  _audioCodecPriorityMacOS:
+  - AAC
+  - FLAC
+  - Apple Lossless
+  - Linear PCM
+  - Uncompresssed
+  _audioCodecPriorityAndroid:
+  - AAC
+  _frameRate: 30
+  _timelapseScale: 1
+  _frameUpdateMode: 0
+  _downScale: 1
+  _maxVideoSize: {x: 0, y: 0}
+  _forceVideoCodecIndexWindows: -1
+  _forceVideoCodecIndexMacOS: 0
+  _forceVideoCodecIndexIOS: 0
+  _forceVideoCodecIndexAndroid: 0
+  _forceAudioCodecIndexWindows: -1
+  _forceAudioCodecIndexMacOS: 0
+  _forceAudioCodecIndexIOS: 0
+  _forceAudioCodecIndexAndroid: -1
+  _flipVertically: 0
+  _forceGpuFlush: 0
+  _useWaitForEndOfFrame: 1
+  _androidUpdateMediaGallery: 1
+  _androidNoCaptureRotation: 0
+  _iOSSaveCaptureWhenAppLosesFocus: 1
+  _logCaptureStartStop: 1
+  _audioCaptureSource: 0
+  _unityAudioCapture: {fileID: 0}
+  _forceAudioInputDeviceIndex: 0
+  _manualAudioSampleRate: 48000
+  _manualAudioChannelCount: 2
+  _outputTarget: 0
+  _outputFolderType: 6
+  _outputFolderPath: TENDOR
+  _filenamePrefix: 
+  _appendFilenameTimestamp: 1
+  _allowManualFileExtension: 0
+  _filenameExtension: mp4
+  _namedPipePath: \\.\pipe\test_pipe
+  _writeOrientationMetadata: 0
+  _imageSequenceStartFrame: 0
+  _imageSequenceZeroDigits: 6
+  _imageSequenceFormatWindows: 0
+  _imageSequenceFormatMacOS: 0
+  _imageSequenceFormatIOS: 0
+  _imageSequenceFormatAndroid: 0
+  _renderResolution: 19
+  _renderSize: {x: 1, y: 1}
+  _renderAntiAliasing: -1
+  _useMotionBlur: 0
+  _motionBlurSamples: 16
+  _motionBlurCameras: []
+  _motionBlur: {fileID: 0}
+  _allowVSyncDisable: 1
+  _supportTextureRecreate: 0
+  _minimumDiskSpaceMB: -1
+  _timelineController: {fileID: 0}
+  _videoPlayerController: {fileID: 0}
+  _manualUpdate: 1
 --- !u!1 &1710518195
 GameObject:
   m_ObjectHideFlags: 0
@@ -10238,6 +10188,7 @@ RectTransform:
   - {fileID: 56622220}
   - {fileID: 1266645745}
   - {fileID: 1523216732}
+  - {fileID: 1005728423}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11120,99 +11071,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4a50d88b55b45648927679791f472de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &2012648478
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2012648480}
-  - component: {fileID: 2012648479}
-  m_Layer: 0
-  m_Name: Directional Light (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!108 &2012648479
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2012648478}
-  m_Enabled: 1
-  serializedVersion: 11
-  m_Type: 2
-  m_Color: {r: 0.71084017, g: 0.8683488, b: 0.9245283, a: 1}
-  m_Intensity: 4
-  m_Range: 15
-  m_SpotAngle: 55
-  m_InnerSpotAngle: 1
-  m_CookieSize: 30
-  m_Shadows:
-    m_Type: 2
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 2
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!4 &2012648480
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2012648478}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.55506825, y: -0.43163043, z: 0.48916784, w: 0.51605165}
-  m_LocalPosition: {x: -1.22, y: -2.8, z: 4.55}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 84.365, y: 83.457, z: 164.826}
 --- !u!1 &2060259425
 GameObject:
   m_ObjectHideFlags: 0
@@ -11688,13 +11546,9 @@ SceneRoots:
   m_Roots:
   - {fileID: 702413259}
   - {fileID: 1075000276}
-  - {fileID: 502040743}
-  - {fileID: 2012648480}
   - {fileID: 1323550134}
   - {fileID: 436358034}
   - {fileID: 2099970469}
   - {fileID: 1800202686}
   - {fileID: 331264285}
   - {fileID: 1368426777}
-  - {fileID: 1700931098}
-  - {fileID: 1012656992}

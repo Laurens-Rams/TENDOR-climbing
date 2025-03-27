@@ -35,16 +35,23 @@ namespace RenderHeads.Media.AVProMovieCapture
 
 		private bool RequiresResolve(Texture texture)
 		{
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-			return false;
-#elif !UNITY_EDITOR && (UNITY_IOS || UNITY_ANDROID)
-#if AVPRO_MOVIECAPTURE_WEBCAMTEXTURE_SUPPORT
-			// Need to resolve webcam textures on android and iOS
-			return texture is WebCamTexture;
-#else
-			return false;
-#endif
-#else
+	#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || (!UNITY_EDITOR && (UNITY_IOS || UNITY_ANDROID))
+			if (texture is RenderTexture)
+			{
+				return false;
+			}
+			else
+		#if AVPRO_MOVIECAPTURE_WEBCAMTEXTURE_SUPPORT
+			if (texture is WebCamTexture)
+			{
+				return false;
+			}
+			else
+		#endif
+			{
+				return true;
+			}
+	#else
 			bool result = false;
 
 			if (texture is RenderTexture)
@@ -71,7 +78,7 @@ namespace RenderHeads.Media.AVProMovieCapture
 			}
 
 			return result;
-#endif
+	#endif
 		}
 
 		public void UpdateSourceTexture()

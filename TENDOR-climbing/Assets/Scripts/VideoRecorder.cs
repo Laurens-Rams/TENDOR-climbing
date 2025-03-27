@@ -5,6 +5,7 @@ using TMPro;
 using RenderHeads.Media.AVProMovieCapture;
 using System;
 using System.Collections;
+using UnityEngine.UI;
 
 public class VideoRecorder : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class VideoRecorder : MonoBehaviour
 
     [SerializeField]
     private TextMeshProUGUI tmpFrames;
+
+    [SerializeField]
+    private RawImage image;
 
     [SerializeField]
     private CaptureFromTexture capture;
@@ -83,23 +87,24 @@ public class VideoRecorder : MonoBehaviour
     public void StartRecording()
     {
         tex = new Texture2D((int)Globals.CameraManager.currentConfiguration?.width, (int)Globals.CameraManager.currentConfiguration?.height, TextureFormat.RGBA32, false);
+        image.texture = tex;
         capture.SetSourceTexture(tex);
         capture.StartCapture();
 
         tmpFrames.text = "0";
-        Globals.CameraManager.frameReceived += RecordFrameVK;
+        Globals.CameraManager.frameReceived += RecordFrame;
     }
 
     public void StopRecording()
     {
-        Globals.CameraManager.frameReceived -= RecordFrameVK;
+        Globals.CameraManager.frameReceived -= RecordFrame;
         capture.StopCapture();
 
         //byte[] bytes = File.ReadAllBytes(fullPath);
         //Globals.FileUploader.StartUpload(bytes);
     }
 
-    private void RecordFrameVK(ARCameraFrameEventArgs args)
+    private void RecordFrame(ARCameraFrameEventArgs args)
     {
         if (!Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage))
             return;
@@ -109,6 +114,7 @@ public class VideoRecorder : MonoBehaviour
         cpuImage.Convert(conversionParams, data);
 
         tex.Apply();
+        capture.UpdateFrame();
         capture.UpdateSourceTexture();
         cpuImage.Dispose();
 
