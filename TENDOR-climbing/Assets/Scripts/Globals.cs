@@ -9,6 +9,10 @@ public class Globals : MonoBehaviour
     public static ARTrackedImageManager TrackedImageManager;
     public static ARRaycastManager RaycastManager;
     public static ARCameraManager CameraManager;
+    public static ARHumanBodyManager HumanBodyManager;
+    public static BodyTracker BodyTracker;
+    public static ARAnchorManager AnchorManager;
+    public static Transform ClimbWallAnchor;
     public static FileUploader FileUploader;
     public static GameObject UI;
 
@@ -21,6 +25,12 @@ public class Globals : MonoBehaviour
     [SerializeField]
     private ARCameraManager cameraManager;
     [SerializeField]
+    private ARHumanBodyManager humanBodyManager;
+    [SerializeField]
+    private BodyTracker bodyTracker;
+    [SerializeField]
+    private ARAnchorManager anchorManager;
+    [SerializeField]
     private FileUploader fileUploader;
     [SerializeField]
     private GameObject ui;
@@ -31,6 +41,9 @@ public class Globals : MonoBehaviour
         TrackedImageManager = trackedImageManager;
         RaycastManager = raycastManager;
         CameraManager = cameraManager;
+        HumanBodyManager = humanBodyManager;
+        BodyTracker = bodyTracker;
+        AnchorManager = anchorManager;
         FileUploader = fileUploader;
 
         UI = ui;

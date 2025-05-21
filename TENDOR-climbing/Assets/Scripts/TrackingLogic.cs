@@ -8,6 +8,7 @@ public class TrackingLogic : MonoBehaviour
 {
     private Content[] contents;
     private bool contentAttachedToPlane = false;
+    private bool anchorCreated = false;
 
     void OnEnable()
     {
@@ -46,6 +47,16 @@ public class TrackingLogic : MonoBehaviour
         var content = Array.Find(contents, content => content.name == trackedImage.referenceImage.name);
         if (content == null)
             return false;
+
+        if (!anchorCreated && Globals.AnchorManager != null)
+        {
+            var anchor = Globals.AnchorManager.AddAnchor(new Pose(trackedImage.transform.position, trackedImage.transform.rotation));
+            if (anchor != null)
+            {
+                Globals.ClimbWallAnchor = anchor.transform;
+                anchorCreated = true;
+            }
+        }
 
         // Initially attach content to the tracked image
         content.transform.parent = trackedImage.transform;
