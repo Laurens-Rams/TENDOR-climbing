@@ -5,6 +5,8 @@ using UnityEngine;
 public class LatestPlaybackManager : MonoBehaviour
 {
     [SerializeField] private GameObject avatarPrefab;
+    [SerializeField] private bool autoLoad = false;
+
 
     private BodyFrame[] frames;
     private int index;
@@ -12,6 +14,11 @@ public class LatestPlaybackManager : MonoBehaviour
 
     void Start()
     {
+        if (autoLoad)
+            LoadLatest();
+    }
+
+    public void LoadLatest(){
         string folder = Path.Combine(Application.persistentDataPath, "Captures");
         if (Directory.Exists(folder))
         {
@@ -25,7 +32,8 @@ public class LatestPlaybackManager : MonoBehaviour
             }
         }
 
-        if (avatarPrefab != null)
+        if (avatarPrefab != null && avatar == null)
+
         {
             avatar = Instantiate(avatarPrefab, Vector3.zero, Quaternion.identity).transform;
         }
@@ -41,5 +49,16 @@ public class LatestPlaybackManager : MonoBehaviour
         avatar.position = Globals.ClimbWallAnchor.TransformPoint(frame.position);
         avatar.rotation = Globals.ClimbWallAnchor.rotation * frame.rotation;
         index++;
+    }
+
+    public void Clear()
+    {
+        frames = null;
+        index = 0;
+        if (avatar != null)
+        {
+            Destroy(avatar.gameObject);
+            avatar = null;
+        }
     }
 }
