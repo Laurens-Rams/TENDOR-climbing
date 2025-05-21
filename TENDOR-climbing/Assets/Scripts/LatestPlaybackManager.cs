@@ -7,6 +7,7 @@ public class LatestPlaybackManager : MonoBehaviour
     [SerializeField] private GameObject avatarPrefab;
     [SerializeField] private bool autoLoad = false;
 
+
     private BodyFrame[] frames;
     private int index;
     private Transform avatar;
@@ -17,8 +18,7 @@ public class LatestPlaybackManager : MonoBehaviour
             LoadLatest();
     }
 
-    public void LoadLatest()
-    {
+    public void LoadLatest(){
         string folder = Path.Combine(Application.persistentDataPath, "Captures");
         if (Directory.Exists(folder))
         {
@@ -33,6 +33,7 @@ public class LatestPlaybackManager : MonoBehaviour
         }
 
         if (avatarPrefab != null && avatar == null)
+
         {
             avatar = Instantiate(avatarPrefab, Vector3.zero, Quaternion.identity).transform;
         }
