@@ -8,6 +8,9 @@ public class RecordPlaybackController : MonoBehaviour
     private bool recording = false;
     private bool playing = false;
 
+    public bool IsRecording => recording;
+    public bool IsPlaying => playing;
+
     void Start()
     {
         if (playback)
@@ -18,18 +21,12 @@ public class RecordPlaybackController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-            if (recording)
-                StopRecording();
-            else
-                StartRecording();
+            ToggleRecording();
         }
 
         if (Input.GetKeyDown(KeyCode.V))
         {
-            if (playing)
-                StopPlayback();
-            else
-                StartPlayback();
+            TogglePlayback();
         }
     }
 
@@ -64,6 +61,22 @@ public class RecordPlaybackController : MonoBehaviour
         playback.gameObject.SetActive(true);
         playback.LoadLatest();
         playing = true;
+    }
+
+    public void ToggleRecording()
+    {
+        if (recording)
+            StopRecording();
+        else
+            StartRecording();
+    }
+
+    public void TogglePlayback()
+    {
+        if (playing)
+            StopPlayback();
+        else
+            StartPlayback();
     }
 
     public void StopPlayback()
