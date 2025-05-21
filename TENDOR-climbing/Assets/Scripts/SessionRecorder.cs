@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 [Serializable]
 public struct BodyFrame
@@ -24,18 +25,44 @@ public class SessionRecorder : VideoRecorder
 
     private List<BodyFrame> bodyFrames = new List<BodyFrame>();
     private float startTime;
+    private bool isRecording = false;
+
+    void OnEnable()
+    {
+        if (Globals.TrackedImageManager)
+            Globals.TrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
+    }
+
+    void OnDisable()
+    {
+        if (Globals.TrackedImageManager)
+            Globals.TrackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
+    }
 
     public override void StartRecording()
     {
+        if (Globals.ClimbWallAnchor == null)
+        {
+            Debug.LogWarning("Cannot start recording: no image target recognized.");
+            isRecording = false;
+            return;
+        }
+
         base.StartRecording();
         startTime = Time.time;
         bodyFrames.Clear();
         if (!bodyTracker)
             bodyTracker = Globals.BodyTracker;
+
+        isRecording = true;
     }
 
     public override void StopRecording()
     {
+        if (!isRecording)
+            return;
+
+        isRecording = false;
         base.StopRecording();
         SaveFrames();
     }
@@ -71,5 +98,29 @@ public class SessionRecorder : VideoRecorder
             Directory.CreateDirectory(folder);
         string path = Path.Combine(folder, DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".body");
         File.WriteAllText(path, JsonUtility.ToJson(collection));
+    }
+
+    private void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs args)
+    {
+        if (!isRecording)
+            return;
+
+        foreach (var trackedImage in args.added)
+        {
+            if (trackedImage.trackingState == TrackingState.Tracking)
+            {
+                Debug.Log("Image target recognized while recording.");
+                break;
+            }
+        }
+
+        foreach (var trackedImage in args.updated)
+        {
+            if (trackedImage.trackingState == TrackingState.Tracking)
+            {
+                Debug.Log("Image target recognized while recording.");
+                break;
+            }
+        }
     }
 }
