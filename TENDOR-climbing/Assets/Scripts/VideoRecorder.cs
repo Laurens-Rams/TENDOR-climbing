@@ -81,7 +81,7 @@ public class VideoRecorder : MonoBehaviour
         yield return null;
     }
 
-    public void StartRecording()
+    public virtual void StartRecording()
     {
         tex = new Texture2D((int)Globals.CameraManager.currentConfiguration?.width, (int)Globals.CameraManager.currentConfiguration?.height, TextureFormat.RGBA32, false);
         image.texture = tex;
@@ -92,7 +92,7 @@ public class VideoRecorder : MonoBehaviour
         Globals.CameraManager.frameReceived += RecordFrame;
     }
 
-    public void StopRecording()
+    public virtual void StopRecording()
     {
         Globals.CameraManager.frameReceived -= RecordFrame;
         capture.StopCapture();
@@ -101,7 +101,7 @@ public class VideoRecorder : MonoBehaviour
         //Globals.FileUploader.StartUpload(bytes);
     }
 
-    private void RecordFrame(ARCameraFrameEventArgs args)
+    protected virtual void RecordFrame(ARCameraFrameEventArgs args)
     {
         if (!Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage))
             return;
