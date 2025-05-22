@@ -20,7 +20,7 @@ public class HipsPlayback : MonoBehaviour
     void OnEnable()
     {
         if (!imageManager)
-            imageManager = FindObjectOfType<ARTrackedImageManager>();
+            imageManager = FindFirstObjectByType<ARTrackedImageManager>();
         if (!ViewSwitcher.isARMode)
         {
             enabled = false;

@@ -35,12 +35,14 @@ public class StickFigureSkeleton : MonoBehaviour
     }
 
     void Update()
+{
+    if (bodyManager.trackables.count == 0)
+        return;
+
+    foreach (var body in bodyManager.trackables)
     {
-        if (bodyManager.trackables.count == 0)
-            return;
-        var body = bodyManager.trackables[0];
         var animator = body.GetComponent<Animator>();
-        if (!animator) return;
+        if (!animator) continue;
 
         EnsureLines();
         for (int i = 0; i < bonePairs.Length; i++)
@@ -53,7 +55,11 @@ public class StickFigureSkeleton : MonoBehaviour
             line.SetPosition(0, ta.position);
             line.SetPosition(1, tb.position);
         }
+
+        // Only draw one skeleton; remove this if you want to support multiple bodies
+        break;
     }
+}
 
     private void EnsureLines()
     {
