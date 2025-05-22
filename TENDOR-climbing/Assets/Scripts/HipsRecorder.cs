@@ -25,7 +25,7 @@ public class HipsRecorder : MonoBehaviour
             return;
         }
         imageManager.trackedImagesChanged += OnImagesChanged;
-        startButton.SetActive(false);
+        startButton.SetActive(true);
     }
 
     void OnDisable()
@@ -33,7 +33,7 @@ public class HipsRecorder : MonoBehaviour
         imageManager.trackedImagesChanged -= OnImagesChanged;
         bodyManager.humanBodiesChanged -= OnBodiesChanged;
         if (startButton)
-            startButton.SetActive(false);
+            startButton.SetActive(true);
     }
 
     private void OnImagesChanged(ARTrackedImagesChangedEventArgs args)
