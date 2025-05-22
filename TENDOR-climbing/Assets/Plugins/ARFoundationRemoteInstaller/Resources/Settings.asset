@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd607c3f010ab45a29ecfcf8d5a898ef, type: 3}
   m_Name: Settings
   m_EditorClassIdentifier: 
-  ARCompanionAppIP: 192.168.1.36
+  ARCompanionAppIP: 169.254.108.3
   arCompanionSettings:
     cameraVideoSettings:
       enableVideo: 1
       syncCameraPoseWithVideo: 1
       resolutionScale: 0.33
       quality: 95
-      maxVideoFps: 9.96
+      maxVideoFps: 15
       maxCpuImagesFps: 15
     occlusionSettings:
       maxFPS: 10
@@ -61,7 +61,7 @@ MonoBehaviour:
     overrideDisplayMatrix: 0
     displayMatrix:
       e00: 0
-      e01: -0.6150235
+      e01: -0.61576355
       e02: 0
       e03: 0
       e10: -1
@@ -69,7 +69,7 @@ MonoBehaviour:
       e12: 0
       e13: 0
       e20: 1
-      e21: 0.80751175
+      e21: 0.8078818
       e22: 1
       e23: 0
       e30: 0
@@ -78,13 +78,13 @@ MonoBehaviour:
       e33: 1
     overrideProjectionMatrix: 0
     projectionMatrix:
-      e00: 3.014732
+      e00: 3.2964623
       e01: 0
-      e02: -0.001334548
+      e02: 0.008654952
       e03: 0
       e10: 0
-      e11: 1.3905982
-      e12: 0.0069119334
+      e11: 1.522381
+      e12: -0.02213633
       e13: 0
       e20: 0
       e21: 0
@@ -100,5 +100,4 @@ MonoBehaviour:
     warnNativeCameraTrackingIsNotSupported: 1
     applyCameraBgFractalsFix: 1
   port: 44819
-  embeddedImageLibraries:
-  - {fileID: 11400000, guid: 48549f1a5fbc0c342ab03e774b5d71d5, type: 2}
+  embeddedImageLibraries: []
