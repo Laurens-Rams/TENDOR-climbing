@@ -11,6 +11,12 @@ public class TrackingLogic : MonoBehaviour
 
     void OnEnable()
     {
+        if (!ViewSwitcher.isARMode)
+        {
+            enabled = false;
+            return;
+        }
+
         contents = GetComponentsInChildren<Content>(true);
         Globals.TrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
     }
