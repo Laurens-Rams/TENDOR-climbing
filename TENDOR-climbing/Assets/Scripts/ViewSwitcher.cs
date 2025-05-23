@@ -6,9 +6,7 @@ public class ViewSwitcher : MonoBehaviour
 
     [SerializeField] private GameObject arUI;
     [SerializeField] private GameObject recordUI;
-    [SerializeField] private TrackingLogic trackingLogic;
-    [SerializeField] private HipsRecorder hipsRecorder;
-    [SerializeField] private HipsPlayback hipsPlayback;
+    [SerializeField] private TrackingManager trackingManager;
 
     void Awake()
     {
@@ -23,15 +21,21 @@ public class ViewSwitcher : MonoBehaviour
 
     private void ApplyMode()
     {
-        if (trackingLogic)
-            trackingLogic.enabled = isARMode;
-        if (hipsRecorder)
-            hipsRecorder.enabled = !isARMode;
-        if (hipsPlayback)
-            hipsPlayback.enabled = isARMode;
+        if (trackingManager != null)
+        {
+            trackingManager.enabled = true;
+            trackingManager.SwitchMode();
+        }
+        else
+        {
+            Debug.LogWarning("[ViewSwitcher] TrackingManager not assigned! Please assign it in the inspector.");
+        }
+        
         if (arUI)
             arUI.SetActive(isARMode);
         if (recordUI)
             recordUI.SetActive(!isARMode);
+            
+        Debug.Log($"[ViewSwitcher] Mode set to: {(isARMode ? "AR Playback" : "Recording")}");
     }
 }

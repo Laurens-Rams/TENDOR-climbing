@@ -2,56 +2,61 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
 
-public class HipsRecorder : ImageTrackingBase
+public class HipsRecorder : MonoBehaviour
 {
-    [SerializeField] private GameObject recordingAvatarPrefab;
-    [SerializeField] private TMPro.TextMeshProUGUI debugText;
-    
+    private GameObject wallInstance;
     private GameObject avatarInstance;
+    private TMPro.TextMeshProUGUI debugText;
+    
     private List<SerializablePose> recordedPoses;
     private float recordingStartTime;
     private bool isRecording = false;
+    private bool isInitialized = false;
 
-    protected override void OnEnable()
+    public void Initialize(GameObject wall, GameObject avatarPrefab, TMPro.TextMeshProUGUI debugUI)
     {
-        base.OnEnable();
+        wallInstance = wall;
+        debugText = debugUI;
         
-        if (ViewSwitcher.isARMode)
+        if (avatarPrefab != null && wallInstance != null)
         {
-            enabled = false;
-            UpdateDebugText("Disabled - in AR mode");
-            return;
+            avatarInstance = Instantiate(avatarPrefab, wallInstance.transform.position, wallInstance.transform.rotation);
+            Debug.Log("[HipsRecorder] Avatar placed for recording");
+            UpdateDebugText("Ready - Press record to start");
+            isInitialized = true;
+        }
+        else
+        {
+            Debug.LogError("[HipsRecorder] Failed to initialize - missing wall or avatar prefab");
+            UpdateDebugText("Setup failed - missing prefabs");
         }
         
         recordedPoses = new List<SerializablePose>();
-        Debug.Log("[HipsRecorder] Ready to record");
-        UpdateDebugText("Ready to record");
     }
 
-    protected override void OnDisable()
+    void OnDisable()
     {
-        base.OnDisable();
         StopRecording();
         if (avatarInstance)
-            Destroy(avatarInstance);
-        avatarInstance = null;
-    }
-
-    protected override void OnWallPlaced(Vector3 position, Quaternion rotation)
-    {
-        if (recordingAvatarPrefab && !avatarInstance)
         {
-            avatarInstance = Instantiate(recordingAvatarPrefab, position, rotation);
-            Debug.Log("[HipsRecorder] Avatar placed for recording");
-            UpdateDebugText("Ready - Press record to start");
+            Destroy(avatarInstance);
+            avatarInstance = null;
         }
+        isInitialized = false;
     }
 
     public void StartRecording()
     {
-        if (!isWallPlaced || !avatarInstance)
+        if (!isInitialized)
         {
-            Debug.LogWarning("[HipsRecorder] Cannot start recording - wall or avatar not ready");
+            Debug.LogWarning("[HipsRecorder] Cannot start recording - not initialized. Make sure image target is detected first.");
+            UpdateDebugText("Scan image target first!");
+            return;
+        }
+        
+        if (!avatarInstance || wallInstance == null)
+        {
+            Debug.LogWarning("[HipsRecorder] Cannot start recording - setup not ready");
             UpdateDebugText("Cannot record - setup not ready");
             return;
         }
@@ -75,9 +80,9 @@ public class HipsRecorder : ImageTrackingBase
 
     private void Update()
     {
-        if (!isRecording || !avatarInstance) return;
+        if (!isRecording || !avatarInstance || wallInstance == null) return;
 
-        // Record the current pose
+        // Record the current pose relative to the wall
         var currentPose = new SerializablePose
         {
             time = Time.time - recordingStartTime,
@@ -98,6 +103,7 @@ public class HipsRecorder : ImageTrackingBase
         if (recordedPoses == null || recordedPoses.Count == 0)
         {
             Debug.LogWarning("[HipsRecorder] No poses to save");
+            UpdateDebugText("No poses recorded!");
             return;
         }
 
@@ -109,6 +115,7 @@ public class HipsRecorder : ImageTrackingBase
         {
             File.WriteAllText(path, json);
             Debug.Log($"[HipsRecorder] Saved {recordedPoses.Count} poses to {path}");
+            UpdateDebugText($"Saved {recordedPoses.Count} poses to file");
         }
         catch (System.Exception e)
         {
@@ -117,11 +124,22 @@ public class HipsRecorder : ImageTrackingBase
         }
     }
 
+    public bool IsInitialized()
+    {
+        return isInitialized;
+    }
+
+    public bool IsRecording()
+    {
+        return isRecording;
+    }
+
     private void UpdateDebugText(string message)
     {
         if (debugText != null)
         {
             debugText.text = message;
         }
+        Debug.Log($"[HipsRecorder] {message}");
     }
 } 

@@ -1,53 +1,49 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
-using UnityEngine.UI;
 
-public class HipsPlayback : ImageTrackingBase
+public class HipsPlayback : MonoBehaviour
 {
-    [SerializeField] private GameObject avatarPrefab;
-    [SerializeField] private GameObject skeletonPrefab;
-    [SerializeField] private TMPro.TextMeshProUGUI debugText;
-
-    private List<SerializablePose> poses;
+    private GameObject wallInstance;
     private GameObject avatarInstance;
     private GameObject skeletonInstance;
+    private TMPro.TextMeshProUGUI debugText;
+
+    private List<SerializablePose> poses;
     private float startTime;
     private int index;
+    private bool isInitialized = false;
 
-    protected override void OnEnable()
+    public void Initialize(GameObject wall, GameObject avatarPrefab, GameObject skeletonPrefab, TMPro.TextMeshProUGUI debugUI)
     {
-        base.OnEnable();
-        
-        Debug.Log("[HipsPlayback] OnEnable - AR mode: " + ViewSwitcher.isARMode);
-        
-        if (!ViewSwitcher.isARMode)
-        {
-            enabled = false;
-            UpdateDebugText("Disabled - not in AR mode");
-            return;
-        }
+        wallInstance = wall;
+        debugText = debugUI;
         
         Load();
         
-        if (poses != null && poses.Count > 0)
+        if (poses != null && poses.Count > 0 && avatarPrefab != null && wallInstance != null)
         {
-            Debug.Log($"[HipsPlayback] Loaded {poses.Count} poses");
-            UpdateDebugText($"Loaded {poses.Count} poses");
+            PlaceAvatar(avatarPrefab, skeletonPrefab);
+            isInitialized = true;
+            Debug.Log($"[HipsPlayback] Initialized with {poses.Count} poses");
+            UpdateDebugText($"Playback ready - {poses.Count} poses loaded");
+        }
+        else if (poses == null || poses.Count == 0)
+        {
+            Debug.LogWarning("[HipsPlayback] No recording found to playback");
+            UpdateDebugText("No recording found - record first!");
         }
         else
         {
-            Debug.LogWarning("[HipsPlayback] No poses loaded from JSON!");
-            UpdateDebugText("No poses loaded!");
+            Debug.LogError("[HipsPlayback] Failed to initialize - missing wall or avatar prefab");
+            UpdateDebugText("Setup failed - missing prefabs");
         }
     }
 
-    protected override void OnDisable()
+    void OnDisable()
     {
-        base.OnDisable();
         CleanupPlaybackInstances();
+        isInitialized = false;
     }
 
     private void CleanupPlaybackInstances()
@@ -71,21 +67,26 @@ public class HipsPlayback : ImageTrackingBase
                 if (string.IsNullOrEmpty(json))
                 {
                     Debug.LogError("[HipsPlayback] JSON file is empty!");
-                    UpdateDebugText("JSON file is empty!");
+                    UpdateDebugText("Recording file is empty!");
                     return;
                 }
                 
                 var data = JsonUtility.FromJson<SerializablePoseCollection>(json);
-                if (data != null)
+                if (data != null && data.poses != null)
                 {
                     poses = data.poses;
-                    Debug.Log($"[HipsPlayback] Successfully loaded {poses?.Count ?? 0} poses");
+                    Debug.Log($"[HipsPlayback] Successfully loaded {poses.Count} poses");
+                }
+                else
+                {
+                    Debug.LogError("[HipsPlayback] Failed to parse JSON data");
+                    UpdateDebugText("Invalid recording file!");
                 }
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"[HipsPlayback] Error loading JSON: {e.Message}");
-                UpdateDebugText("Error loading JSON!");
+                UpdateDebugText("Error loading recording!");
             }
         }
         else
@@ -95,21 +96,18 @@ public class HipsPlayback : ImageTrackingBase
         }
     }
 
-    protected override void OnWallPlaced(Vector3 position, Quaternion rotation)
+    private void PlaceAvatar(GameObject avatarPrefab, GameObject skeletonPrefab)
     {
-        if (poses != null && poses.Count > 0 && avatarPrefab)
-        {
-            PlaceAvatar(position, rotation);
-        }
-    }
+        if (poses == null || poses.Count == 0 || avatarPrefab == null || wallInstance == null) return;
 
-    private void PlaceAvatar(Vector3 wallPosition, Quaternion wallRotation)
-    {
-        if (poses == null || poses.Count == 0 || avatarPrefab == null) return;
-
-        // Initialize avatar at the first recorded position
-        Vector3 initialPos = wallPosition + (wallRotation * poses[0].position);
-        avatarInstance = Instantiate(avatarPrefab, initialPos, wallRotation * poses[0].rotation);
+        // Initialize avatar at the first recorded position relative to the wall
+        Vector3 localPos = poses[0].position;
+        Quaternion localRot = poses[0].rotation;
+        
+        Vector3 worldPos = wallInstance.transform.TransformPoint(localPos);
+        Quaternion worldRot = wallInstance.transform.rotation * localRot;
+        
+        avatarInstance = Instantiate(avatarPrefab, worldPos, worldRot);
         
         if (avatarInstance == null)
         {
@@ -121,7 +119,7 @@ public class HipsPlayback : ImageTrackingBase
         // Add skeleton visualization if needed
         if (skeletonPrefab)
         {
-            skeletonInstance = Instantiate(skeletonPrefab, initialPos, wallRotation * poses[0].rotation, avatarInstance.transform);
+            skeletonInstance = Instantiate(skeletonPrefab, worldPos, worldRot, avatarInstance.transform);
             var skeleton = skeletonInstance.GetComponent<StickFigureSkeleton>();
             if (skeleton)
             {
@@ -132,12 +130,11 @@ public class HipsPlayback : ImageTrackingBase
         
         startTime = Time.time;
         index = 0;
-        UpdateDebugText($"Playback ready - {poses.Count} poses");
     }
 
     void Update()
     {
-        if (!isWallPlaced || avatarInstance == null || poses == null || poses.Count == 0) return;
+        if (!isInitialized || avatarInstance == null || poses == null || poses.Count == 0 || wallInstance == null) return;
         
         float elapsed = Time.time - startTime;
         
@@ -159,22 +156,32 @@ public class HipsPlayback : ImageTrackingBase
             var nextPose = poses[index + 1];
             float t = Mathf.InverseLerp(currentPose.time, nextPose.time, elapsed);
             
-            // Interpolate position and rotation relative to the wall
-            Vector3 pos = Vector3.Lerp(currentPose.position, nextPose.position, t);
-            Quaternion rot = Quaternion.Slerp(currentPose.rotation, nextPose.rotation, t);
+            // Interpolate position and rotation in local space
+            Vector3 localPos = Vector3.Lerp(currentPose.position, nextPose.position, t);
+            Quaternion localRot = Quaternion.Slerp(currentPose.rotation, nextPose.rotation, t);
             
-            // Transform to world space relative to wall position
-            Vector3 worldPos = wallInstance.transform.TransformPoint(pos);
-            Quaternion worldRot = wallInstance.transform.rotation * rot;
+            // Transform to world space relative to wall
+            Vector3 worldPos = wallInstance.transform.TransformPoint(localPos);
+            Quaternion worldRot = wallInstance.transform.rotation * localRot;
             
             // Update avatar position and rotation
             avatarInstance.transform.SetPositionAndRotation(worldPos, worldRot);
             
             if (Time.frameCount % 90 == 0)
             {
-                UpdateDebugText($"Playing: {index}/{poses.Count-1}");
+                UpdateDebugText($"Playing: {index}/{poses.Count-1} (Loop)");
             }
         }
+    }
+    
+    public bool IsInitialized()
+    {
+        return isInitialized;
+    }
+    
+    public bool HasRecording()
+    {
+        return poses != null && poses.Count > 0;
     }
     
     private void UpdateDebugText(string message)
@@ -183,5 +190,7 @@ public class HipsPlayback : ImageTrackingBase
         {
             debugText.text = message;
         }
+        Debug.Log($"[HipsPlayback] {message}");
     }
+} 
 } 
