@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 1075000275}
   m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
@@ -817,7 +817,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 0e93c6535beb64d3a90916f7ee459cd9,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 0e93c6535beb64d3a90916f7ee459cd9,
         type: 3}
@@ -2407,7 +2407,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2512387470528047719, guid: 48cb3fb68c91eb94999fd99957eb0cae,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1966779737}
+      addedObject: {fileID: 1966779741}
   m_SourcePrefab: {fileID: 100100000, guid: 48cb3fb68c91eb94999fd99957eb0cae, type: 3}
 --- !u!1 &361105573
 GameObject:
@@ -11208,7 +11208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1966779737
+--- !u!114 &1966779741
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -11220,9 +11220,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e5861fe4d817477986290fde61dbc8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Pose2D: 0
+  m_Pose2D: 1
   m_Pose3D: 1
-  m_Pose3DScaleEstimation: 0
+  m_Pose3DScaleEstimation: 1
   m_HumanBodyPrefab: {fileID: 0}
 --- !u!1 &1968961239
 GameObject:
@@ -12087,12 +12087,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 146874cc2bad944abb6db969054dce10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bodyManager: {fileID: 1966779737}
+  bodyManager: {fileID: 1966779741}
   imageManager: {fileID: 1966779729}
   capture: {fileID: 2140000013}
   previewImage: {fileID: 1005728424}
   startButton: {fileID: 323815433}
-  frameCounter: {fileID: 1523216733}
+  frameCounter: {fileID: 0}
+  debugText: {fileID: 1523216733}
 --- !u!114 &2140000013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12381,7 +12382,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   imageManager: {fileID: 1966779729}
   avatarPrefab: {fileID: 106243256}
-  skeletonPrefab: {fileID: 106243256}
+  skeletonPrefab: {fileID: 0}
+  debugText: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
