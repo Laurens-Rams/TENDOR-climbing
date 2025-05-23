@@ -3,26 +3,23 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using UnityEngine.UI; // For debug text
+using UnityEngine.UI;
 
-public class HipsPlayback : MonoBehaviour
+public class HipsPlayback : ImageTrackingBase
 {
-    [SerializeField] private ARTrackedImageManager imageManager;
     [SerializeField] private GameObject avatarPrefab;
     [SerializeField] private GameObject skeletonPrefab;
-    [SerializeField] private TMPro.TextMeshProUGUI debugText; // For displaying debug info
+    [SerializeField] private TMPro.TextMeshProUGUI debugText;
 
     private List<SerializablePose> poses;
-    private Transform imageTransform;
     private GameObject avatarInstance;
     private GameObject skeletonInstance;
     private float startTime;
     private int index;
 
-    void OnEnable()
+    protected override void OnEnable()
     {
-        if (!imageManager)
-            imageManager = FindFirstObjectByType<ARTrackedImageManager>();
+        base.OnEnable();
         
         Debug.Log("[HipsPlayback] OnEnable - AR mode: " + ViewSwitcher.isARMode);
         
@@ -37,7 +34,7 @@ public class HipsPlayback : MonoBehaviour
         
         if (poses != null && poses.Count > 0)
         {
-            Debug.Log($"[HipsPlayback] Loaded {poses.Count} poses from JSON");
+            Debug.Log($"[HipsPlayback] Loaded {poses.Count} poses");
             UpdateDebugText($"Loaded {poses.Count} poses");
         }
         else
@@ -45,26 +42,19 @@ public class HipsPlayback : MonoBehaviour
             Debug.LogWarning("[HipsPlayback] No poses loaded from JSON!");
             UpdateDebugText("No poses loaded!");
         }
-        
-        if (avatarPrefab == null)
-        {
-            Debug.LogError("[HipsPlayback] Avatar prefab is not assigned!");
-            UpdateDebugText("ERROR: No avatar prefab!");
-        }
-        
-        imageManager.trackedImagesChanged += OnImagesChanged;
-        Debug.Log("[HipsPlayback] Waiting for image target...");
     }
 
-    void OnDisable()
+    protected override void OnDisable()
     {
-        Debug.Log("[HipsPlayback] OnDisable");
-        imageManager.trackedImagesChanged -= OnImagesChanged;
-        if (avatarInstance)
-            Destroy(avatarInstance);
+        base.OnDisable();
+        CleanupPlaybackInstances();
+    }
+
+    private void CleanupPlaybackInstances()
+    {
+        if (avatarInstance) Destroy(avatarInstance);
         avatarInstance = null;
-        if (skeletonInstance)
-            Destroy(skeletonInstance);
+        if (skeletonInstance) Destroy(skeletonInstance);
         skeletonInstance = null;
     }
 
@@ -78,8 +68,6 @@ public class HipsPlayback : MonoBehaviour
             try
             {
                 string json = File.ReadAllText(path);
-                Debug.Log($"[HipsPlayback] JSON loaded, length: {json.Length}");
-                
                 if (string.IsNullOrEmpty(json))
                 {
                     Debug.LogError("[HipsPlayback] JSON file is empty!");
@@ -88,153 +76,68 @@ public class HipsPlayback : MonoBehaviour
                 }
                 
                 var data = JsonUtility.FromJson<SerializablePoseCollection>(json);
-                
-                if (data == null)
+                if (data != null)
                 {
-                    Debug.LogError("[HipsPlayback] Failed to parse JSON data!");
-                    UpdateDebugText("Failed to parse JSON!");
-                    return;
-                }
-                
-                poses = data.poses;
-                
-                if (poses == null || poses.Count == 0)
-                {
-                    Debug.LogWarning("[HipsPlayback] No poses in the loaded data!");
-                    UpdateDebugText("No poses in data!");
-                }
-                else
-                {
-                    Debug.Log($"[HipsPlayback] Successfully loaded {poses.Count} poses");
-                    // Print first pose info for debugging
-                    var firstPose = poses[0];
-                    Debug.Log($"[HipsPlayback] First pose - pos: {firstPose.position}, rot: {firstPose.rotation.eulerAngles}, time: {firstPose.time}");
+                    poses = data.poses;
+                    Debug.Log($"[HipsPlayback] Successfully loaded {poses?.Count ?? 0} poses");
                 }
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"[HipsPlayback] Error loading JSON: {e.Message}");
-                UpdateDebugText($"Error: {e.Message}");
+                UpdateDebugText("Error loading JSON!");
             }
         }
         else
         {
-            Debug.LogError($"[HipsPlayback] File not found: {path}");
-            UpdateDebugText("JSON file not found!");
-            
-            // Try the temp file as backup
-            string tempPath = Path.Combine(Application.persistentDataPath, "hips_temp.json");
-            if (File.Exists(tempPath))
-            {
-                Debug.Log($"[HipsPlayback] Trying temp file: {tempPath}");
-                try
-                {
-                    string json = File.ReadAllText(tempPath);
-                    var data = JsonUtility.FromJson<SerializablePoseCollection>(json);
-                    poses = data.poses;
-                    Debug.Log($"[HipsPlayback] Loaded {poses.Count} poses from temp file");
-                    UpdateDebugText($"Loaded {poses.Count} poses from temp");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"[HipsPlayback] Error loading temp JSON: {e.Message}");
-                }
-            }
+            Debug.LogWarning($"[HipsPlayback] No recording file found at {path}");
+            UpdateDebugText("No recording file found!");
         }
     }
 
-    private void OnImagesChanged(ARTrackedImagesChangedEventArgs args)
+    protected override void OnWallPlaced(Vector3 position, Quaternion rotation)
     {
-        Debug.Log($"[HipsPlayback] Images changed: added={args.added.Count}, updated={args.updated.Count}");
-        
-        foreach (var img in args.added)
+        if (poses != null && poses.Count > 0 && avatarPrefab)
         {
-            Debug.Log($"[HipsPlayback] Image added: {img.referenceImage.name}, state: {img.trackingState}");
-            TrySpawn(img);
-        }
-        
-        foreach (var img in args.updated)
-        {
-            Debug.Log($"[HipsPlayback] Image updated: {img.referenceImage.name}, state: {img.trackingState}");
-            TrySpawn(img);
+            PlaceAvatar(position, rotation);
         }
     }
 
-    private void TrySpawn(ARTrackedImage img)
+    private void PlaceAvatar(Vector3 wallPosition, Quaternion wallRotation)
     {
-        Debug.Log($"[HipsPlayback] TrySpawn: {img.referenceImage.name}, tracking: {img.trackingState}");
+        if (poses == null || poses.Count == 0 || avatarPrefab == null) return;
+
+        // Initialize avatar at the first recorded position
+        Vector3 initialPos = wallPosition + (wallRotation * poses[0].position);
+        avatarInstance = Instantiate(avatarPrefab, initialPos, wallRotation * poses[0].rotation);
         
-        // Check for any image target with different possible names (matching recorder)
-        if (imageTransform == null && 
-            (img.referenceImage.name == "Wall 1" ||
-             img.referenceImage.name == "test-target" ||
-             img.referenceImage.name == "Wall_1" ||
-             img.referenceImage.name == "Target" ||
-             img.referenceImage.name.Contains("Wall") ||
-             img.referenceImage.name.Contains("Target")) && 
-            img.trackingState == TrackingState.Tracking)
+        if (avatarInstance == null)
         {
-            Debug.Log($"[HipsPlayback] Target found: {img.referenceImage.name}");
-            imageTransform = img.transform;
-            
-            if (poses != null && poses.Count > 0 && avatarPrefab)
+            Debug.LogError("[HipsPlayback] Failed to instantiate avatar!");
+            UpdateDebugText("Failed to create avatar!");
+            return;
+        }
+        
+        // Add skeleton visualization if needed
+        if (skeletonPrefab)
+        {
+            skeletonInstance = Instantiate(skeletonPrefab, initialPos, wallRotation * poses[0].rotation, avatarInstance.transform);
+            var skeleton = skeletonInstance.GetComponent<StickFigureSkeleton>();
+            if (skeleton)
             {
-                Vector3 worldPos = imageTransform.TransformPoint(poses[0].position);
-                Quaternion worldRot = imageTransform.rotation * poses[0].rotation;
-                
-                Debug.Log($"[HipsPlayback] Spawning avatar at pos: {worldPos}, rot: {worldRot.eulerAngles}");
-                avatarInstance = Instantiate(avatarPrefab, worldPos, worldRot);
-                
-                if (avatarInstance == null)
-                {
-                    Debug.LogError("[HipsPlayback] Failed to instantiate avatar!");
-                    UpdateDebugText("Failed to create avatar!");
-                    return;
-                }
-                
-                Debug.Log("[HipsPlayback] Avatar created successfully");
-                
-                if (skeletonPrefab)
-                {
-                    skeletonInstance = Instantiate(skeletonPrefab, worldPos, worldRot, avatarInstance.transform);
-                    var skeleton = skeletonInstance.GetComponent<StickFigureSkeleton>();
-                    if (skeleton)
-                    {
-                        skeleton.enabled = true;
-                        Debug.Log("[HipsPlayback] Skeleton visualization enabled");
-                    }
-                }
-                
-                startTime = Time.time;
-                index = 0;
-                UpdateDebugText($"Playback started - {poses.Count} poses");
-            }
-            else
-            {
-                if (poses == null || poses.Count == 0)
-                    Debug.LogError("[HipsPlayback] No poses available for playback!");
-                if (avatarPrefab == null)
-                    Debug.LogError("[HipsPlayback] Avatar prefab is not assigned!");
-                
-                UpdateDebugText("Can't spawn - missing data or prefab");
+                skeleton.enabled = true;
+                Debug.Log("[HipsPlayback] Skeleton visualization enabled");
             }
         }
+        
+        startTime = Time.time;
+        index = 0;
+        UpdateDebugText($"Playback ready - {poses.Count} poses");
     }
 
     void Update()
     {
-        if (avatarInstance == null || poses == null || poses.Count == 0)
-        {
-            // Only log this once per second to avoid spam
-            if (Time.frameCount % 60 == 0)
-            {
-                Debug.Log("[HipsPlayback] Update - waiting for avatar/poses");
-                if (avatarInstance == null) Debug.Log("[HipsPlayback] Avatar instance is null");
-                if (poses == null) Debug.Log("[HipsPlayback] Poses list is null");
-                else if (poses.Count == 0) Debug.Log("[HipsPlayback] Poses list is empty");
-            }
-            return;
-        }
+        if (!isWallPlaced || avatarInstance == null || poses == null || poses.Count == 0) return;
         
         float elapsed = Time.time - startTime;
         
@@ -242,17 +145,9 @@ public class HipsPlayback : MonoBehaviour
         while (index + 1 < poses.Count && poses[index + 1].time <= elapsed)
             index++;
         
-        // Log playback progress periodically
-        if (Time.frameCount % 90 == 0)
-        {
-            Debug.Log($"[HipsPlayback] Playing pose {index}/{poses.Count-1} at time {elapsed:F2}s");
-            UpdateDebugText($"Playing: {index}/{poses.Count-1}");
-        }
-        
-        // Check if we need to loop the animation
+        // Loop the animation
         if (index >= poses.Count - 1)
         {
-            Debug.Log("[HipsPlayback] End of animation, looping...");
             startTime = Time.time;
             index = 0;
             return;
@@ -260,18 +155,25 @@ public class HipsPlayback : MonoBehaviour
         
         if (index + 1 < poses.Count)
         {
-            var a = poses[index];
-            var b = poses[index + 1];
-            float t = Mathf.InverseLerp(a.time, b.time, elapsed);
-            Vector3 pos = Vector3.Lerp(a.position, b.position, t);
-            Quaternion rot = Quaternion.Slerp(a.rotation, b.rotation, t);
+            var currentPose = poses[index];
+            var nextPose = poses[index + 1];
+            float t = Mathf.InverseLerp(currentPose.time, nextPose.time, elapsed);
             
-            // Convert from local to world space
-            Vector3 worldPos = imageTransform.TransformPoint(pos);
-            Quaternion worldRot = imageTransform.rotation * rot;
+            // Interpolate position and rotation relative to the wall
+            Vector3 pos = Vector3.Lerp(currentPose.position, nextPose.position, t);
+            Quaternion rot = Quaternion.Slerp(currentPose.rotation, nextPose.rotation, t);
+            
+            // Transform to world space relative to wall position
+            Vector3 worldPos = wallInstance.transform.TransformPoint(pos);
+            Quaternion worldRot = wallInstance.transform.rotation * rot;
             
             // Update avatar position and rotation
             avatarInstance.transform.SetPositionAndRotation(worldPos, worldRot);
+            
+            if (Time.frameCount % 90 == 0)
+            {
+                UpdateDebugText($"Playing: {index}/{poses.Count-1}");
+            }
         }
     }
     
@@ -281,9 +183,5 @@ public class HipsPlayback : MonoBehaviour
         {
             debugText.text = message;
         }
-        else
-        {
-            Debug.LogWarning("[HipsPlayback] Debug text UI is not assigned");
-        }
     }
-}
+} 

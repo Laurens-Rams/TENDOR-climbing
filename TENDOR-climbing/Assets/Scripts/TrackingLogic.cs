@@ -8,13 +8,24 @@ public class TrackingLogic : MonoBehaviour
 {
     private Content[] contents;
     private bool contentAttachedToPlane = false;
+    private bool isRecordingMode = false;
+
+    [SerializeField]
+    private float wallScaleFactor = 1.0f; // Adjustable scale factor for wall projection
 
     void OnEnable()
     {
         if (!ViewSwitcher.isARMode)
         {
-            enabled = false;
-            return;
+            isRecordingMode = true;
+            // Still enable tracking for positioning, but hide visual elements
+            foreach (var content in GetComponentsInChildren<Content>(true))
+            {
+                if (content is DeepMotionContent dmc)
+                {
+                    dmc.SetImageTargetVisibility(false);
+                }
+            }
         }
 
         contents = GetComponentsInChildren<Content>(true);
@@ -29,7 +40,7 @@ public class TrackingLogic : MonoBehaviour
     void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
     {
         if (contentAttachedToPlane)
-            return; // Stop further image target searching if content is already attached to a plane.
+            return;
 
         foreach (var trackedImage in eventArgs.added)
         {
@@ -53,13 +64,17 @@ public class TrackingLogic : MonoBehaviour
         if (content == null)
             return false;
 
-        // Initially attach content to the tracked image
-        content.transform.parent = trackedImage.transform;
-        content.transform.localPosition = Vector3.zero;
-        content.transform.localRotation = Quaternion.identity;
+        if (isRecordingMode)
+        {
+            // In recording mode, just track position without visual overlay
+            content.transform.parent = trackedImage.transform;
+            content.transform.localPosition = Vector3.zero;
+            content.transform.localRotation = Quaternion.identity;
+            return true;
+        }
 
-        // Perform raycast to find planes
-        var ray = new Ray(Globals.XROrigin.Camera.transform.position, (trackedImage.transform.position - Globals.XROrigin.Camera.transform.position).normalized);
+        // AR Mode - align with wall
+        var ray = new Ray(trackedImage.transform.position, trackedImage.transform.forward);
         var hits = new List<ARRaycastHit>();
         Globals.RaycastManager.Raycast(ray, hits, TrackableType.Planes);
 
@@ -68,23 +83,29 @@ public class TrackingLogic : MonoBehaviour
             foreach (var hit in hits)
             {
                 var plane = hit.trackable as ARPlane;
-                if (plane != null && plane.alignment == PlaneAlignment.Vertical) // Check for vertical planes
+                if (plane != null && plane.alignment == PlaneAlignment.Vertical)
                 {
-                    Vector3 originalWorldScale = content.transform.lossyScale;
-
+                    // Use the image target's size for proper scaling
+                    float targetWidth = trackedImage.size.x;
+                    float targetHeight = trackedImage.size.y;
+                    
                     content.transform.parent = plane.transform;
                     content.transform.position = hit.pose.position;
                     content.transform.rotation = hit.pose.rotation;
-                    content.transform.localScale = originalWorldScale * 0.26f; 
+                    
+                    // Scale based on the image target's actual size
+                    Vector3 scale = new Vector3(
+                        targetWidth * wallScaleFactor,
+                        targetHeight * wallScaleFactor,
+                        1f
+                    );
+                    content.transform.localScale = scale;
 
-                    contentAttachedToPlane = true; // Stop further checks
+                    contentAttachedToPlane = true;
                     break;
                 }
             }
         }
-
-        content.Show(trackedImage);
-
         return contentAttachedToPlane;
     }
-}
+} 
