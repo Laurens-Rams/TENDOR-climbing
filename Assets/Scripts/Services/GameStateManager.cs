@@ -5,7 +5,7 @@ using TENDOR.Runtime.Models;
 using TENDOR.Services.Firebase;
 using TENDOR.Services.AR;
 
-namespace TENDOR.Core
+namespace TENDOR.Services
 {
     /// <summary>
     /// Single-scene state machine managing the core application flow

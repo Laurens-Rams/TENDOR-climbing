@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using TENDOR.Core;
+using TENDOR.Services;
 using TENDOR.Services.AR;
 
 namespace TENDOR.Testing

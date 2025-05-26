@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.XR.ARFoundation;
+using TENDOR.Services;
 using TENDOR.Services.AR;
 using TENDOR.Services.Firebase;
 using TENDOR.Core;
