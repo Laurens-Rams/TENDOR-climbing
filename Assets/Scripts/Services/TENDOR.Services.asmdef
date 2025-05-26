@@ -1,0 +1,22 @@
+{
+    "name": "TENDOR.Services",
+    "rootNamespace": "TENDOR.Services",
+    "references": [
+        "TENDOR.Core",
+        "Unity.XR.ARFoundation",
+        "Unity.XR.CoreUtils",
+        "Firebase.App",
+        "Firebase.Auth",
+        "Firebase.Firestore",
+        "Firebase.Storage"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 
