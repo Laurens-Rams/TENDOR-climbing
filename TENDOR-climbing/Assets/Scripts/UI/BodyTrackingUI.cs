@@ -128,10 +128,10 @@ namespace BodyTracking.UI
                             modeInfo += " (Waiting for Image Target)";
                         break;
                     case OperationMode.Recording:
-                        modeInfo += " 🔴";
+                        modeInfo += " [REC]";
                         break;
                     case OperationMode.Playing:
-                        modeInfo += " ▶️";
+                        modeInfo += " [PLAY]";
                         break;
                 }
                 
@@ -157,7 +157,7 @@ namespace BodyTracking.UI
                 var buttonText = recordButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (buttonText != null)
                 {
-                    buttonText.text = canRecord ? "🔴 RECORD" : "⏸️ RECORD";
+                    buttonText.text = canRecord ? "RECORD" : "RECORD";
                 }
             }
             
@@ -172,7 +172,7 @@ namespace BodyTracking.UI
                 var buttonText = playButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (buttonText != null)
                 {
-                    buttonText.text = canPlayback ? "▶️ PLAY" : "⏸️ PLAY";
+                    buttonText.text = canPlayback ? "PLAY" : "PLAY";
                 }
             }
             
@@ -205,11 +205,11 @@ namespace BodyTracking.UI
             // System initialization status
             if (!controller.IsInitialized)
             {
-                status.AppendLine("🔄 System initializing...");
+                status.AppendLine("System initializing...");
                 return status.ToString();
             }
             
-            status.AppendLine("✅ System initialized");
+            status.AppendLine("System initialized");
             
             // Image tracking status
             var imageManager = controller.GetComponent<BodyTracking.AR.ARImageTargetManager>();
@@ -217,35 +217,35 @@ namespace BodyTracking.UI
             {
                 if (imageManager.IsImageDetected)
                 {
-                    status.AppendLine("📷 Image target detected");
-                    status.AppendLine($"📍 Target: {imageManager.ImageTargetTransform?.position}");
+                    status.AppendLine("Image target detected");
+                    status.AppendLine($"Target: {imageManager.ImageTargetTransform?.position}");
                 }
                 else
                 {
-                    status.AppendLine("🔍 Searching for image target...");
-                    status.AppendLine("📱 Point camera at wall target");
+                    status.AppendLine("Searching for image target...");
+                    status.AppendLine("Point camera at wall target");
                 }
             }
             else
             {
-                status.AppendLine("❌ Image manager not found");
+                status.AppendLine("Image manager not found");
             }
             
             // Body tracking status
             var humanBodyManager = FindObjectOfType<UnityEngine.XR.ARFoundation.ARHumanBodyManager>();
             if (humanBodyManager != null)
             {
-                status.AppendLine($"🚶 Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
+                status.AppendLine($"Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
                 
                 // Check for tracked bodies
                 var trackedBodies = FindObjectsOfType<UnityEngine.XR.ARFoundation.ARHumanBody>();
                 if (trackedBodies.Length > 0)
                 {
-                    status.AppendLine($"👤 Bodies detected: {trackedBodies.Length}");
+                    status.AppendLine($"Bodies detected: {trackedBodies.Length}");
                 }
                 else
                 {
-                    status.AppendLine("👤 No bodies detected");
+                    status.AppendLine("No bodies detected");
                 }
             }
             
@@ -253,27 +253,27 @@ namespace BodyTracking.UI
             switch (controller.CurrentMode)
             {
                 case OperationMode.Recording:
-                    status.AppendLine("🔴 RECORDING IN PROGRESS");
+                    status.AppendLine("RECORDING IN PROGRESS");
                     break;
                 case OperationMode.Playing:
-                    status.AppendLine("▶️ PLAYBACK IN PROGRESS");
+                    status.AppendLine("PLAYBACK IN PROGRESS");
                     break;
                 case OperationMode.Ready:
                     if (controller.CanRecord)
-                        status.AppendLine("✅ Ready to record");
+                        status.AppendLine("Ready to record");
                     if (controller.CanPlayback)
-                        status.AppendLine("✅ Ready to playback");
+                        status.AppendLine("Ready to playback");
                     break;
             }
             
             // Available recordings
             if (availableRecordings.Count > 0)
             {
-                status.AppendLine($"💾 Recordings available: {availableRecordings.Count}");
+                status.AppendLine($"Recordings available: {availableRecordings.Count}");
             }
             else
             {
-                status.AppendLine("💾 No recordings found");
+                status.AppendLine("No recordings found");
             }
             
             return status.ToString();

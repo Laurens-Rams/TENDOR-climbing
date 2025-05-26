@@ -4,6 +4,7 @@ using UnityEngine.XR.ARSubsystems;
 using BodyTracking.Data;
 using BodyTracking.Animation;
 using System;
+using Unity.XR.CoreUtils;
 
 namespace BodyTracking.Recording
 {
@@ -251,7 +252,7 @@ namespace BodyTracking.Recording
             }
             
             // Debug logging for tracking issues
-            if (!foundValidJoint && currentRecording.FrameCount % 30 == 0)
+            if (!foundValidJoint && currentRecording.FrameCount % 90 == 0) // Reduced frequency from 30 to 90
             {
                UnityEngine.Debug.LogWarning($"[BodyTrackingRecorder] No valid joint data found at frame {currentRecording.FrameCount}");
             }
@@ -272,12 +273,12 @@ namespace BodyTracking.Recording
                 hipVisualizationSphere.name = "HipVisualization_AR";
                 hipVisualizationSphere.transform.localScale = Vector3.one * 0.3f;
                 
-                // Parent to AR Session Origin for proper AR sync
-                var arSessionOrigin = FindObjectOfType<UnityEngine.XR.ARFoundation.ARSessionOrigin>();
-                if (arSessionOrigin != null)
+                // Parent to XR Origin for proper AR sync
+                var xrOrigin = FindFirstObjectByType<XROrigin>();
+                if (xrOrigin != null)
                 {
-                    hipVisualizationSphere.transform.SetParent(arSessionOrigin.transform);
-                   UnityEngine.Debug.Log("[BodyTrackingRecorder] Parented hip sphere to AR Session Origin");
+                    hipVisualizationSphere.transform.SetParent(xrOrigin.transform);
+                   UnityEngine.Debug.Log("[BodyTrackingRecorder] Parented hip sphere to XR Origin");
                 }
                 
                 // Make it bright red using AR-compatible shader
@@ -307,16 +308,6 @@ namespace BodyTracking.Recording
             if (characterController != null && characterController.IsInitialized)
             {
                 characterController.SetTargetHipPosition(worldPosition);
-            }
-            
-            // Log sphere position every few frames to verify it's being updated
-            if (Time.frameCount % 60 == 0)
-            {
-               UnityEngine.Debug.Log($"[BodyTrackingRecorder] Hip sphere at {worldPosition:F3}, active: {hipVisualizationSphere.activeInHierarchy}");
-                if (characterController != null)
-                {
-                   UnityEngine.Debug.Log($"[BodyTrackingRecorder] Character hip updated to {worldPosition:F3}");
-                }
             }
         }
 

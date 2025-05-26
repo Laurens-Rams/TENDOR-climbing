@@ -155,11 +155,11 @@ namespace BodyTracking.Playback
                 bool animationStarted = characterController.StartAnimationPlayback();
                 if (animationStarted)
                 {
-                   UnityEngine.Debug.Log("[BodyTrackingPlayer] Started synchronized animation playback");
+                   UnityEngine.Debug.Log("[BodyTrackingPlayer] ✅ Started synchronized animation playback");
                 }
                 else
                 {
-                   UnityEngine.Debug.LogWarning("[BodyTrackingPlayer] Failed to start animation playback - continuing with hip-only playback");
+                   UnityEngine.Debug.LogWarning("[BodyTrackingPlayer] ⚠️ Failed to start animation playback - continuing with hip-only playback");
                 }
             }
             
@@ -184,7 +184,7 @@ namespace BodyTracking.Playback
             if (characterController != null && characterController.IsInitialized)
             {
                 characterController.StopAnimationPlayback();
-               UnityEngine.Debug.Log("[BodyTrackingPlayer] Stopped synchronized animation playback");
+               UnityEngine.Debug.Log("[BodyTrackingPlayer] ⏹️ Stopped synchronized animation playback");
             }
             
             OnPlaybackStopped?.Invoke();

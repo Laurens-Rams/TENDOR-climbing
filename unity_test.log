@@ -1,0 +1,37 @@
+Unity Editor version:    2023.2.20f1 (0e25a174756c)
+Branch:                  2023.2/staging
+Build type:              Release
+Batch mode:              NO
+macOS version:           Version 14.3.1 (Build 23D60)
+Darwin version:          23.3.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        32768 MB
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to the License Client on channel: "LicenseClient-laurensart" at "2025-05-26T12:37:52.750443Z"
+[Licensing::Client] Error: Code 10 while verifying Licensing Client signature (process Id: 1735, path: "/Applications/Unity Hub.app/Contents/Frameworks/UnityLicensingClient_V1.app/Contents/MacOS/Unity.Licensing.Client")
+[Licensing::Module] Error: LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.17.0+aa6cfba
+  Session Id:              42ed959b9a704255bcb40c5e04a90a33
+  Correlation Id:          962b4cc1dd2994be94eea0e3b141aedd
+  External correlation Id: 6276814844519340865
+  Machine Id:              i+EsiyelR1eysCG4hAJ1rEiNAbA=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-laurensart" (connect: 0.00s, validation: 0.01s, handshake: 0.26s)
+[Licensing::IpcConnector] Successfully connected to the License Notification on channel: "LicenseClient-laurensart-notifications" at "2025-05-26T12:37:53.026545Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+[Licensing::Client] Successfully resolved entitlements
+[Licensing::Module] Serial number assigned to: "F4-BG5Z-DKDZ-KDBP-6XP9-XXXX"
+Pro License: NO
+Launching external process: /Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/Resources/PackageManager/Server/UnityPackageManager
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/MacOS/Unity
+-projectPath
+.
+-logFile
+unity_test.log
+Couldn't set project path to: /Users/laurensart/Desktop/TENDOR-climbing
+Successfully changed project path to: /Users/laurensart/Desktop/TENDOR-climbing
+[Package Manager] Server process was shutdown

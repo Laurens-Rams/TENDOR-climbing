@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.XR.ARFoundation;
+using Unity.XR.CoreUtils;
 using BodyTracking;
 using BodyTracking.UI;
 using BodyTracking.AR;
@@ -30,7 +31,7 @@ namespace BodyTracking.Editor
             // AR Foundation Components
             GUILayout.Label("AR Foundation Components", EditorStyles.boldLabel);
             ValidateComponent<ARSession>("AR Session");
-            ValidateComponent<ARSessionOrigin>("XR Origin (AR Rig)");
+            ValidateComponent<XROrigin>("XR Origin (AR Rig)");
             ValidateComponent<ARHumanBodyManager>("AR Human Body Manager");
             ValidateComponent<ARTrackedImageManager>("AR Tracked Image Manager");
 
@@ -67,7 +68,7 @@ namespace BodyTracking.Editor
 
         private void ValidateComponent<T>(string componentName) where T : Component
         {
-            T component = FindObjectOfType<T>();
+            T component = FindFirstObjectByType<T>();
             if (component != null)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -88,7 +89,7 @@ namespace BodyTracking.Editor
 
         private void ValidateUISetup()
         {
-            var ui = FindObjectOfType<BodyTrackingUI>();
+            var ui = FindFirstObjectByType<BodyTrackingUI>();
             if (ui == null)
             {
                 EditorGUILayout.LabelField("❌ BodyTrackingUI script not found");
@@ -122,7 +123,7 @@ namespace BodyTracking.Editor
         private void AutoFixMissingComponents()
         {
             // Find or create XR Origin
-            var xrOrigin = FindObjectOfType<ARSessionOrigin>();
+            var xrOrigin = FindFirstObjectByType<XROrigin>();
             if (xrOrigin == null)
             {
                 Debug.LogError("XR Origin not found. Please add AR Foundation XR Origin prefab to scene.");
@@ -143,7 +144,7 @@ namespace BodyTracking.Editor
             }
 
             // Find or create AR Session
-            if (FindObjectOfType<ARSession>() == null)
+            if (FindFirstObjectByType<ARSession>() == null)
             {
                 var sessionGO = new GameObject("AR Session");
                 sessionGO.AddComponent<ARSession>();
@@ -156,7 +157,7 @@ namespace BodyTracking.Editor
         private void CreateBodyTrackingSystem()
         {
             // Check if already exists
-            if (FindObjectOfType<BodyTrackingController>() != null)
+            if (FindFirstObjectByType<BodyTrackingController>() != null)
             {
                 Debug.LogWarning("BodyTrackingController already exists in scene");
                 return;
@@ -172,7 +173,7 @@ namespace BodyTracking.Editor
             var player = systemGO.AddComponent<BodyTracking.Playback.BodyTrackingPlayer>();
 
             // Try to auto-connect references
-            var xrOrigin = FindObjectOfType<ARSessionOrigin>();
+            var xrOrigin = FindFirstObjectByType<XROrigin>();
             if (xrOrigin != null)
             {
                 var humanBodyManager = xrOrigin.GetComponent<ARHumanBodyManager>();

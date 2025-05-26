@@ -65,7 +65,7 @@ namespace BodyTracking.AR
         {
             if (contentAttachedToTarget)
             {
-                Debug.Log("[ARImageTargetManager] Content already attached, ignoring further image tracking");
+                // Silently ignore further tracking when content is already attached
                 return; // Stop further image target searching if content is already attached
             }
 
