@@ -12,6 +12,7 @@ public class iOSPostProcessor
         if (buildTarget == BuildTarget.iOS)
         {
             AddPhotosLibraryPermission(pathToBuiltProject);
+            AddPhotosFramework(pathToBuiltProject);
         }
     }
 
@@ -33,5 +34,24 @@ public class iOSPostProcessor
         File.WriteAllText(plistPath, plist.WriteToString());
         
         Debug.Log("[iOSPostProcessor] Added Photos library permission to Info.plist");
+    }
+
+    private static void AddPhotosFramework(string pathToBuiltProject)
+    {
+        // Get the Xcode project
+        string projPath = pathToBuiltProject + "/Unity-iPhone.xcodeproj/project.pbxproj";
+        PBXProject proj = new PBXProject();
+        proj.ReadFromString(File.ReadAllText(projPath));
+
+        // Get the target GUID
+        string targetGuid = proj.GetUnityMainTargetGuid();
+
+        // Add Photos framework
+        proj.AddFrameworkToProject(targetGuid, "Photos.framework", false);
+
+        // Write the project file
+        File.WriteAllText(projPath, proj.WriteToString());
+        
+        Debug.Log("[iOSPostProcessor] Added Photos.framework to Xcode project");
     }
 } 
