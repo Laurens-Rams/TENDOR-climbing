@@ -6,7 +6,7 @@ using System.IO;
 
 public class iOSPostProcessor
 {
-    [PostProcessBuild]
+    [PostProcessBuild(999)] // Run after other post-processors
     public static void OnPostprocessBuild(BuildTarget buildTarget, string pathToBuiltProject)
     {
         if (buildTarget == BuildTarget.iOS)
@@ -40,14 +40,35 @@ public class iOSPostProcessor
     {
         // Get the Xcode project
         string projPath = pathToBuiltProject + "/Unity-iPhone.xcodeproj/project.pbxproj";
+        
+        if (!File.Exists(projPath))
+        {
+            Debug.LogError($"[iOSPostProcessor] Xcode project file not found: {projPath}");
+            return;
+        }
+        
         PBXProject proj = new PBXProject();
         proj.ReadFromString(File.ReadAllText(projPath));
 
-        // Get the target GUID
-        string targetGuid = proj.GetUnityMainTargetGuid();
+        // Get the target GUID - try both Unity main target and UnityFramework
+        string mainTargetGuid = proj.GetUnityMainTargetGuid();
+        string frameworkTargetGuid = proj.GetUnityFrameworkTargetGuid();
+        
+        Debug.Log($"[iOSPostProcessor] Main target GUID: {mainTargetGuid}");
+        Debug.Log($"[iOSPostProcessor] Framework target GUID: {frameworkTargetGuid}");
 
-        // Add Photos framework
-        proj.AddFrameworkToProject(targetGuid, "Photos.framework", false);
+        // Add Photos framework to both targets
+        if (!string.IsNullOrEmpty(mainTargetGuid))
+        {
+            proj.AddFrameworkToProject(mainTargetGuid, "Photos.framework", true); // true = weak link
+            Debug.Log("[iOSPostProcessor] Added Photos.framework to main target (weak link)");
+        }
+        
+        if (!string.IsNullOrEmpty(frameworkTargetGuid))
+        {
+            proj.AddFrameworkToProject(frameworkTargetGuid, "Photos.framework", true); // true = weak link
+            Debug.Log("[iOSPostProcessor] Added Photos.framework to framework target (weak link)");
+        }
 
         // Write the project file
         File.WriteAllText(projPath, proj.WriteToString());
