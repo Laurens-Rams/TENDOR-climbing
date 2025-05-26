@@ -1,0 +1,283 @@
+name: Unity Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test Unity Project
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode:
+          - EditMode
+          - PlayMode
+    
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Cache Unity Library folder
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: TENDOR-climbing/Library
+          key: Library-${{ matrix.testMode }}-${{ hashFiles('TENDOR-climbing/Assets/**', 'TENDOR-climbing/Packages/**', 'TENDOR-climbing/ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ matrix.testMode }}-
+            Library-
+
+      # Free up disk space on Ubuntu
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # Run Unity tests
+      - name: Run Unity Tests
+        uses: game-ci/unity-test-runner@v4
+        id: tests
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: TENDOR-climbing
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: test-results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity Test Results (${{ matrix.testMode }})
+
+      # Upload test results
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: Test results (${{ matrix.testMode }})
+          path: test-results
+
+      # Comment test results on PR
+      - name: Comment Test Results
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request' && always()
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const testMode = '${{ matrix.testMode }}';
+            const testResults = '${{ steps.tests.outputs.result }}';
+            
+            let comment = `## 🧪 Unity Test Results (${testMode})\n\n`;
+            
+            if (testResults === 'passed') {
+              comment += `✅ All tests passed!\n\n`;
+            } else {
+              comment += `❌ Some tests failed. Check the [workflow run](${context.payload.pull_request.html_url}/checks) for details.\n\n`;
+            }
+            
+            // Try to read test summary if available
+            try {
+              const summaryPath = path.join('test-results', 'results.xml');
+              if (fs.existsSync(summaryPath)) {
+                const summary = fs.readFileSync(summaryPath, 'utf8');
+                // Parse basic test info from XML (simplified)
+                const testMatch = summary.match(/tests="(\d+)"/);
+                const failureMatch = summary.match(/failures="(\d+)"/);
+                const errorMatch = summary.match(/errors="(\d+)"/);
+                
+                if (testMatch) {
+                  const total = testMatch[1];
+                  const failures = failureMatch ? failureMatch[1] : '0';
+                  const errors = errorMatch ? errorMatch[1] : '0';
+                  const passed = total - failures - errors;
+                  
+                  comment += `**Test Summary:**\n`;
+                  comment += `- Total: ${total}\n`;
+                  comment += `- Passed: ${passed}\n`;
+                  comment += `- Failed: ${failures}\n`;
+                  comment += `- Errors: ${errors}\n\n`;
+                }
+              }
+            } catch (e) {
+              console.log('Could not read test summary:', e.message);
+            }
+            
+            comment += `[View full test results](${context.payload.pull_request.html_url}/checks)`;
+            
+            // Find existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body.includes(`Unity Test Results (${testMode})`)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+  build-validation:
+    name: Validate Build
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: TENDOR-climbing/Library
+          key: Library-Build-${{ hashFiles('TENDOR-climbing/Assets/**', 'TENDOR-climbing/Packages/**', 'TENDOR-climbing/ProjectSettings/**') }}
+          restore-keys: |
+            Library-Build-
+            Library-
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # Validate that project builds without errors
+      - name: Build Unity Project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: TENDOR-climbing
+          targetPlatform: StandaloneOSX
+          buildName: TENDOR-climbing
+          buildsPath: builds
+          
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Build Validation
+          path: builds
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Check for common code quality issues
+      - name: Check for Debug.Log statements
+        run: |
+          echo "🔍 Checking for Debug.Log statements..."
+          DEBUG_LOGS=$(grep -r "Debug\.Log" TENDOR-climbing/Assets/Scripts/ --include="*.cs" || true)
+          if [ ! -z "$DEBUG_LOGS" ]; then
+            echo "⚠️ Found Debug.Log statements that should use the Logger system:"
+            echo "$DEBUG_LOGS"
+            echo "Please replace with Logger.Log(), Logger.LogWarning(), or Logger.LogError()"
+            exit 1
+          else
+            echo "✅ No Debug.Log statements found"
+          fi
+
+      - name: Check for TODO comments
+        run: |
+          echo "🔍 Checking for TODO comments..."
+          TODOS=$(grep -r "TODO" TENDOR-climbing/Assets/Scripts/ --include="*.cs" || true)
+          if [ ! -z "$TODOS" ]; then
+            echo "📝 Found TODO comments:"
+            echo "$TODOS"
+            echo "Consider creating GitHub issues for these items"
+          else
+            echo "✅ No TODO comments found"
+          fi
+
+      - name: Check file naming conventions
+        run: |
+          echo "🔍 Checking file naming conventions..."
+          INVALID_NAMES=$(find TENDOR-climbing/Assets/Scripts/ -name "*.cs" | grep -E "[a-z]" | grep -v -E "^[A-Z]" || true)
+          if [ ! -z "$INVALID_NAMES" ]; then
+            echo "⚠️ Found files that don't follow PascalCase naming:"
+            echo "$INVALID_NAMES"
+            echo "Please rename files to use PascalCase"
+            exit 1
+          else
+            echo "✅ All C# files follow PascalCase naming"
+          fi
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test, build-validation, code-quality]
+    if: always()
+    
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# 🎯 TENDOR Refactor Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ **Unit Tests**: All tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Unit Tests**: Some tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.build-validation.result }}" == "success" ]; then
+            echo "✅ **Build Validation**: Project builds successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build Validation**: Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.code-quality.result }}" == "success" ]; then
+            echo "✅ **Code Quality**: All checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Code Quality**: Some issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Edit Mode Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Play Mode Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Validation: ${{ needs.build-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View detailed results in the Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY 

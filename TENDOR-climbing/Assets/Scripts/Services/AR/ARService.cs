@@ -1,0 +1,423 @@
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using TENDOR.Core;
+using TENDOR.Runtime.Models;
+using TENDOR.Services.Firebase;
+
+namespace TENDOR.Services.AR
+{
+    /// <summary>
+    /// Centralized AR service managing AR Foundation components and runtime image library
+    /// Ensures single ARSession, ARCameraManager, AROcclusionManager, and ARTrackedImageManager
+    /// </summary>
+    public class ARService : MonoBehaviour
+    {
+        public static ARService Instance { get; private set; }
+
+        [Header("AR Components")]
+        [SerializeField] private ARSession arSession;
+        [SerializeField] private ARCameraManager arCameraManager;
+        [SerializeField] private AROcclusionManager arOcclusionManager;
+        [SerializeField] private ARTrackedImageManager arTrackedImageManager;
+        [SerializeField] private ARHumanBodyManager arHumanBodyManager;
+
+        [Header("Configuration")]
+        [SerializeField] private bool autoLoadImageLibrary = true;
+        [SerializeField] private float imageLibraryRefreshInterval = 300f; // 5 minutes
+
+        // Runtime image library
+        private MutableRuntimeReferenceImageLibrary runtimeImageLibrary;
+        private Dictionary<string, BoulderData> loadedBoulders = new Dictionary<string, BoulderData>();
+
+        // Events
+        public event System.Action<ARTrackedImage> OnImageTracked;
+        public event System.Action<ARTrackedImage> OnImageLost;
+        public event System.Action OnImageLibraryLoaded;
+
+        private bool isInitialized = false;
+        private float lastLibraryRefresh = 0f;
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+                InitializeARComponents();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void Start()
+        {
+            if (autoLoadImageLibrary)
+            {
+                LoadImageLibraryAsync();
+            }
+        }
+
+        private void Update()
+        {
+            // Periodically refresh image library
+            if (autoLoadImageLibrary && Time.time - lastLibraryRefresh > imageLibraryRefreshInterval)
+            {
+                LoadImageLibraryAsync();
+            }
+        }
+
+        private void InitializeARComponents()
+        {
+            try
+            {
+                Logger.Log("Initializing AR components...", "AR");
+
+                // Find or create AR components
+                FindOrCreateARSession();
+                FindOrCreateARCameraManager();
+                FindOrCreateARTrackedImageManager();
+                FindOrCreateARHumanBodyManager();
+                FindOrCreateAROcclusionManager();
+
+                // Subscribe to events
+                if (arTrackedImageManager != null)
+                {
+                    arTrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
+                }
+
+                isInitialized = true;
+                Logger.Log("AR components initialized successfully", "AR");
+            }
+            catch (System.Exception e)
+            {
+                Logger.LogError(e, "AR");
+            }
+        }
+
+        #region AR Component Management
+
+        private void FindOrCreateARSession()
+        {
+            if (arSession == null)
+            {
+                arSession = FindObjectOfType<ARSession>();
+            }
+
+            if (arSession == null)
+            {
+                GameObject sessionObj = new GameObject("AR Session");
+                arSession = sessionObj.AddComponent<ARSession>();
+                Logger.Log("Created AR Session", "AR");
+            }
+            else
+            {
+                Logger.Log("Found existing AR Session", "AR");
+            }
+        }
+
+        private void FindOrCreateARCameraManager()
+        {
+            if (arCameraManager == null)
+            {
+                arCameraManager = FindObjectOfType<ARCameraManager>();
+            }
+
+            if (arCameraManager == null)
+            {
+                // Look for XR Origin or create one
+                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                if (xrOrigin == null)
+                {
+                    Logger.LogError("No XR Origin found. Please ensure XR Origin is set up in the scene.", "AR");
+                    return;
+                }
+
+                arCameraManager = xrOrigin.Camera.gameObject.GetComponent<ARCameraManager>();
+                if (arCameraManager == null)
+                {
+                    arCameraManager = xrOrigin.Camera.gameObject.AddComponent<ARCameraManager>();
+                    Logger.Log("Created AR Camera Manager", "AR");
+                }
+            }
+            else
+            {
+                Logger.Log("Found existing AR Camera Manager", "AR");
+            }
+        }
+
+        private void FindOrCreateARTrackedImageManager()
+        {
+            if (arTrackedImageManager == null)
+            {
+                arTrackedImageManager = FindObjectOfType<ARTrackedImageManager>();
+            }
+
+            if (arTrackedImageManager == null)
+            {
+                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                if (xrOrigin != null)
+                {
+                    arTrackedImageManager = xrOrigin.gameObject.AddComponent<ARTrackedImageManager>();
+                    Logger.Log("Created AR Tracked Image Manager", "AR");
+                }
+            }
+            else
+            {
+                Logger.Log("Found existing AR Tracked Image Manager", "AR");
+            }
+        }
+
+        private void FindOrCreateARHumanBodyManager()
+        {
+            if (arHumanBodyManager == null)
+            {
+                arHumanBodyManager = FindObjectOfType<ARHumanBodyManager>();
+            }
+
+            if (arHumanBodyManager == null)
+            {
+                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                if (xrOrigin != null)
+                {
+                    arHumanBodyManager = xrOrigin.gameObject.AddComponent<ARHumanBodyManager>();
+                    Logger.Log("Created AR Human Body Manager", "AR");
+                }
+            }
+            else
+            {
+                Logger.Log("Found existing AR Human Body Manager", "AR");
+            }
+        }
+
+        private void FindOrCreateAROcclusionManager()
+        {
+            if (arOcclusionManager == null)
+            {
+                arOcclusionManager = FindObjectOfType<AROcclusionManager>();
+            }
+
+            if (arOcclusionManager == null)
+            {
+                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                if (xrOrigin != null && arCameraManager != null)
+                {
+                    arOcclusionManager = arCameraManager.gameObject.AddComponent<AROcclusionManager>();
+                    Logger.Log("Created AR Occlusion Manager", "AR");
+                }
+            }
+            else
+            {
+                Logger.Log("Found existing AR Occlusion Manager", "AR");
+            }
+        }
+
+        #endregion
+
+        #region Runtime Image Library
+
+        /// <summary>
+        /// Load runtime image library from Firebase
+        /// </summary>
+        public async Task LoadImageLibraryAsync()
+        {
+            try
+            {
+                Logger.Log("Loading runtime image library...", "AR");
+
+                if (arTrackedImageManager == null)
+                {
+                    Logger.LogError("AR Tracked Image Manager not available", "AR");
+                    return;
+                }
+
+                // Get active boulders from Firebase
+                var boulders = await FirebaseService.Instance.GetActiveBoulders();
+                
+                if (boulders == null || boulders.Length == 0)
+                {
+                    Logger.LogWarning("No active boulders found", "AR");
+                    return;
+                }
+
+                // Create runtime library if needed
+                if (runtimeImageLibrary == null)
+                {
+                    runtimeImageLibrary = arTrackedImageManager.CreateRuntimeLibrary();
+                    if (runtimeImageLibrary == null)
+                    {
+                        Logger.LogError("Failed to create runtime image library", "AR");
+                        return;
+                    }
+                }
+
+                // Load images for each boulder
+                int loadedCount = 0;
+                foreach (var boulder in boulders)
+                {
+                    if (!loadedBoulders.ContainsKey(boulder.id))
+                    {
+                        bool success = await LoadBoulderImage(boulder);
+                        if (success)
+                        {
+                            loadedBoulders[boulder.id] = boulder;
+                            loadedCount++;
+                        }
+                    }
+                }
+
+                // Update the tracked image manager
+                if (loadedCount > 0)
+                {
+                    arTrackedImageManager.referenceLibrary = runtimeImageLibrary;
+                    Logger.Log($"Loaded {loadedCount} new images into runtime library", "AR");
+                }
+
+                lastLibraryRefresh = Time.time;
+                OnImageLibraryLoaded?.Invoke();
+            }
+            catch (System.Exception e)
+            {
+                Logger.LogError($"Failed to load image library: {e.Message}", "AR");
+            }
+        }
+
+        private async Task<bool> LoadBoulderImage(BoulderData boulder)
+        {
+            try
+            {
+                // Download image from Firebase Storage
+                byte[] imageData = await FirebaseService.Instance.DownloadFileAsync(boulder.targetUrl);
+                
+                if (imageData == null || imageData.Length == 0)
+                {
+                    Logger.LogWarning($"Failed to download image for boulder: {boulder.name}", "AR");
+                    return false;
+                }
+
+                // Create texture from image data
+                Texture2D texture = new Texture2D(2, 2);
+                if (!texture.LoadImage(imageData))
+                {
+                    Logger.LogWarning($"Failed to load texture for boulder: {boulder.name}", "AR");
+                    return false;
+                }
+
+                // Add to runtime library
+                var addImageJob = runtimeImageLibrary.ScheduleAddImageWithValidationJob(
+                    texture,
+                    boulder.name,
+                    boulder.physicalWidthM
+                );
+
+                // Wait for job completion
+                while (!addImageJob.jobHandle.IsCompleted)
+                {
+                    await Task.Yield();
+                }
+
+                if (addImageJob.status == AddReferenceImageJobStatus.Success)
+                {
+                    Logger.Log($"Successfully added image: {boulder.name}", "AR");
+                    return true;
+                }
+                else
+                {
+                    Logger.LogWarning($"Failed to add image to library: {boulder.name} - {addImageJob.status}", "AR");
+                    return false;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Logger.LogError($"Error loading boulder image {boulder.name}: {e.Message}", "AR");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
+        {
+            foreach (var trackedImage in eventArgs.added)
+            {
+                Logger.Log($"Image tracked: {trackedImage.referenceImage.name}", "AR");
+                OnImageTracked?.Invoke(trackedImage);
+            }
+
+            foreach (var trackedImage in eventArgs.updated)
+            {
+                if (trackedImage.trackingState == TrackingState.Tracking)
+                {
+                    OnImageTracked?.Invoke(trackedImage);
+                }
+                else if (trackedImage.trackingState == TrackingState.None)
+                {
+                    Logger.Log($"Image lost: {trackedImage.referenceImage.name}", "AR");
+                    OnImageLost?.Invoke(trackedImage);
+                }
+            }
+
+            foreach (var trackedImage in eventArgs.removed)
+            {
+                Logger.Log($"Image removed: {trackedImage.referenceImage.name}", "AR");
+                OnImageLost?.Invoke(trackedImage);
+            }
+        }
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>
+        /// Get AR Camera Manager instance
+        /// </summary>
+        public ARCameraManager GetCameraManager() => arCameraManager;
+
+        /// <summary>
+        /// Get AR Human Body Manager instance
+        /// </summary>
+        public ARHumanBodyManager GetHumanBodyManager() => arHumanBodyManager;
+
+        /// <summary>
+        /// Get AR Tracked Image Manager instance
+        /// </summary>
+        public ARTrackedImageManager GetTrackedImageManager() => arTrackedImageManager;
+
+        /// <summary>
+        /// Get boulder data by ID
+        /// </summary>
+        public BoulderData GetBoulderData(string boulderId)
+        {
+            return loadedBoulders.TryGetValue(boulderId, out var boulder) ? boulder : null;
+        }
+
+        /// <summary>
+        /// Check if AR is properly initialized
+        /// </summary>
+        public bool IsInitialized => isInitialized;
+
+        /// <summary>
+        /// Manually refresh image library
+        /// </summary>
+        public void RefreshImageLibrary()
+        {
+            LoadImageLibraryAsync();
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            if (arTrackedImageManager != null)
+            {
+                arTrackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
+            }
+        }
+    }
+} 
