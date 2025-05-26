@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using TENDOR.Core;
@@ -320,13 +321,11 @@ namespace TENDOR.Services.AR
 
             foreach (var trackedImage in eventArgs.updated)
             {
-                // Check tracking state using string comparison since TrackingState enum may not be available
-                var trackingStateString = trackedImage.trackingState.ToString();
-                if (trackingStateString == "Tracking")
+                if (trackedImage.trackingState == TrackingState.Tracking)
                 {
                     OnImageTracked?.Invoke(trackedImage);
                 }
-                else if (trackingStateString == "None" || trackingStateString == "Limited")
+                else if (trackedImage.trackingState == TrackingState.None || trackedImage.trackingState == TrackingState.Limited)
                 {
                     Logger.Log($"Image lost: {trackedImage.referenceImage.name}", "AR");
                     OnImageLost?.Invoke(trackedImage);
