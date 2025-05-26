@@ -24,7 +24,6 @@ namespace BodyTracking
         
         [Header("Settings")]
         public bool autoInitialize = true;
-        public bool debugMode = false;
         
         [Header("UI")]
         public TMPro.TextMeshProUGUI statusText;
@@ -319,10 +318,7 @@ namespace BodyTracking
                 currentMode = newMode;
                 OnModeChanged?.Invoke(currentMode);
                 
-                if (debugMode)
-                {
-                    Debug.Log($"[BodyTrackingController] Mode changed to: {currentMode}");
-                }
+                Debug.Log($"[BodyTrackingController] Mode changed to: {currentMode}");
             }
         }
 
@@ -333,10 +329,7 @@ namespace BodyTracking
                 statusText.text = message;
             }
             
-            if (debugMode)
-            {
-                Debug.Log($"[BodyTrackingController] Status: {message}");
-            }
+            Debug.Log($"[BodyTrackingController] Status: {message}");
         }
 
         #endregion

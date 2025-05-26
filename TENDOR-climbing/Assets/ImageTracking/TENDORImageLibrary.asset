@@ -21,9 +21,9 @@ MonoBehaviour:
       m_GuidLow: 5358129858338598161
       m_GuidHigh: 6438240779187739051
     m_SerializedTextureGuid:
-      m_GuidLow: 16853733463898470839
-      m_GuidHigh: 2473980744791245194
-    m_Size: {x: 0.25, y: 0.2439346}
+      m_GuidLow: 17593555676703832010
+      m_GuidHigh: 16720850313903716123
+    m_Size: {x: 1.5, y: 2.6311476}
     m_SpecifySize: 1
     m_Name: Wall 1
     m_Texture: {fileID: 0}

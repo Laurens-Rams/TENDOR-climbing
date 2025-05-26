@@ -1,8 +1,0 @@
-m_EditorClassIdentifier: 
-wallPrefab: {fileID: 0}
-wallScaleFactor: 1
-recordingAvatarPrefab: {fileID: 0}
-useSkeletalRecording: 1
-playbackAvatarPrefab: {fileID: 0}
-skeletonPrefab: {fileID: 0}
-debugText: {fileID: 0} 

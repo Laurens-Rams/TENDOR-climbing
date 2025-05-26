@@ -31,7 +31,7 @@ namespace BodyTracking.Utils
         [ContextMenu("Apply Optimizations")]
         public void ApplyOptimizations()
         {
-            Debug.Log("[QualityOptimizer] Applying quality optimizations...");
+           UnityEngine.Debug.Log("[QualityOptimizer] Applying quality optimizations...");
             
             // Frame rate
             Application.targetFrameRate = targetFrameRate;
@@ -60,12 +60,12 @@ namespace BodyTracking.Utils
                 ApplyDeviceOptimizations();
             }
             
-            Debug.Log("[QualityOptimizer] Quality optimizations applied");
+           UnityEngine.Debug.Log("[QualityOptimizer] Quality optimizations applied");
         }
 
         private void ApplyARRemoteOptimizations()
         {
-            Debug.Log("[QualityOptimizer] Applying AR Remote optimizations...");
+           UnityEngine.Debug.Log("[QualityOptimizer] Applying AR Remote optimizations...");
             
             // Lower quality for streaming
             QualitySettings.SetQualityLevel(2, false); // Medium quality
@@ -82,7 +82,7 @@ namespace BodyTracking.Utils
 
         private void ApplyDeviceOptimizations()
         {
-            Debug.Log("[QualityOptimizer] Applying device optimizations...");
+           UnityEngine.Debug.Log("[QualityOptimizer] Applying device optimizations...");
             
             // Adjust based on device performance
             if (SystemInfo.processorCount <= 4)
@@ -113,7 +113,7 @@ namespace BodyTracking.Utils
         {
             QualitySettings.SetQualityLevel(QualitySettings.names.Length - 1, true);
             Application.targetFrameRate = -1;
-            Debug.Log("[QualityOptimizer] Reset to default quality settings");
+           UnityEngine.Debug.Log("[QualityOptimizer] Reset to default quality settings");
         }
 
         void OnValidate()

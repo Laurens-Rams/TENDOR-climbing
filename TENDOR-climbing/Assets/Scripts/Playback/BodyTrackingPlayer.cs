@@ -1,5 +1,6 @@
 using UnityEngine;
 using BodyTracking.Data;
+using BodyTracking.Animation;
 
 namespace BodyTracking.Playback
 {
@@ -12,11 +13,14 @@ namespace BodyTracking.Playback
         [SerializeField] private bool loopPlayback = true;
         [SerializeField] private float playbackSpeed = 1.0f;
         [SerializeField] private bool showVisualization = true;
-        [SerializeField] private bool debugMode = false;
         
         [Header("Visualization")]
         [SerializeField] private bool showPath = true;
         [SerializeField] private int maxPathPoints = 100;
+        
+        [Header("Character Integration")]
+        [SerializeField] private FBXCharacterController characterController;
+        [SerializeField] private bool autoFindCharacterController = true;
         
         // Dependencies
         private Transform imageTargetTransform;
@@ -53,7 +57,7 @@ namespace BodyTracking.Playback
             
             if (imageTargetTransform == null)
             {
-                Debug.LogError("[BodyTrackingPlayer] Image target transform is required");
+               UnityEngine.Debug.LogError("[BodyTrackingPlayer] Image target transform is required");
                 return false;
             }
             
@@ -64,8 +68,38 @@ namespace BodyTracking.Playback
                 InitializeVisualization();
             }
             
-            Debug.Log("[BodyTrackingPlayer] Successfully initialized for hip playback");
+            // Setup character controller integration
+            SetupCharacterController();
+            
             return true;
+        }
+
+        /// <summary>
+        /// Setup integration with character controller
+        /// </summary>
+        private void SetupCharacterController()
+        {
+            if (characterController == null && autoFindCharacterController)
+            {
+                characterController = FindObjectOfType<FBXCharacterController>();
+                if (characterController != null)
+                {
+                   UnityEngine.Debug.Log("[BodyTrackingPlayer] Found FBXCharacterController automatically");
+                }
+            }
+            
+            if (characterController != null)
+            {
+                if (!characterController.IsInitialized)
+                {
+                    characterController.Initialize();
+                }
+               UnityEngine.Debug.Log("[BodyTrackingPlayer] Character controller integration enabled for playback");
+            }
+            else
+            {
+               UnityEngine.Debug.Log("[BodyTrackingPlayer] No character controller found - visualization only");
+            }
         }
 
         /// <summary>
@@ -75,7 +109,7 @@ namespace BodyTracking.Playback
         {
             if (newRecording == null || !newRecording.IsValid)
             {
-                Debug.LogError("[BodyTrackingPlayer] Invalid hip recording provided");
+               UnityEngine.Debug.LogError("[BodyTrackingPlayer] Invalid hip recording provided");
                 return false;
             }
             
@@ -88,7 +122,6 @@ namespace BodyTracking.Playback
             recording = newRecording;
             currentPlaybackTime = 0f;
             
-            Debug.Log($"[BodyTrackingPlayer] Loaded hip recording: {recording.FrameCount} frames, {recording.duration:F2}s");
             return true;
         }
 
@@ -99,13 +132,13 @@ namespace BodyTracking.Playback
         {
             if (recording == null || !recording.IsValid)
             {
-                Debug.LogError("[BodyTrackingPlayer] No valid hip recording loaded");
+               UnityEngine.Debug.LogError("[BodyTrackingPlayer] No valid hip recording loaded");
                 return;
             }
             
             if (isPlaying)
             {
-                Debug.LogWarning("[BodyTrackingPlayer] Already playing");
+               UnityEngine.Debug.LogWarning("[BodyTrackingPlayer] Already playing");
                 return;
             }
             
@@ -116,7 +149,20 @@ namespace BodyTracking.Playback
             playbackStartTime = Time.time;
             currentPlaybackTime = 0f;
             
-            Debug.Log("[BodyTrackingPlayer] Started hip playback");
+            // Start animation playback if character controller is available
+            if (characterController != null && characterController.IsInitialized)
+            {
+                bool animationStarted = characterController.StartAnimationPlayback();
+                if (animationStarted)
+                {
+                   UnityEngine.Debug.Log("[BodyTrackingPlayer] Started synchronized animation playback");
+                }
+                else
+                {
+                   UnityEngine.Debug.LogWarning("[BodyTrackingPlayer] Failed to start animation playback - continuing with hip-only playback");
+                }
+            }
+            
             OnPlaybackStarted?.Invoke();
         }
 
@@ -134,7 +180,13 @@ namespace BodyTracking.Playback
                 HideVisualization();
             }
             
-            Debug.Log("[BodyTrackingPlayer] Stopped hip playback");
+            // Stop animation playback if character controller is available
+            if (characterController != null && characterController.IsInitialized)
+            {
+                characterController.StopAnimationPlayback();
+               UnityEngine.Debug.Log("[BodyTrackingPlayer] Stopped synchronized animation playback");
+            }
+            
             OnPlaybackStopped?.Invoke();
         }
 
@@ -169,6 +221,12 @@ namespace BodyTracking.Playback
                     currentPlaybackTime = currentPlaybackTime % recording.duration;
                     playbackStartTime = Time.time - currentPlaybackTime / playbackSpeed;
                     OnPlaybackLooped?.Invoke();
+                    
+                    // Restart animation for loop
+                    if (characterController != null && characterController.IsInitialized)
+                    {
+                        characterController.StartAnimationPlayback();
+                    }
                 }
                 else
                 {
@@ -188,11 +246,6 @@ namespace BodyTracking.Playback
             
             // Notify progress
             OnPlaybackProgress?.Invoke(PlaybackProgress);
-            
-            if (debugMode && Time.frameCount % 30 == 0)
-            {
-                Debug.Log($"[BodyTrackingPlayer] Hip playback: {currentPlaybackTime:F2}s / {recording.duration:F2}s ({PlaybackProgress * 100:F1}%)");
-            }
         }
 
         /// <summary>
@@ -209,10 +262,8 @@ namespace BodyTracking.Playback
             var renderer = hipSphere.GetComponent<Renderer>();
             if (renderer != null)
             {
-                var material = new Material(Shader.Find("Standard"));
+                var material = new Material(Shader.Find("Unlit/Color"));
                 material.color = Color.blue;
-                material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", Color.blue * 2f);
                 renderer.material = material;
             }
             
@@ -238,8 +289,6 @@ namespace BodyTracking.Playback
                 pathLine.positionCount = 0;
                 pathLine.useWorldSpace = true;
             }
-            
-            Debug.Log("[BodyTrackingPlayer] Initialized hip visualization");
         }
 
         /// <summary>
@@ -247,11 +296,10 @@ namespace BodyTracking.Playback
         /// </summary>
         private void UpdateVisualization(HipFrame frame)
         {
-            if (!frame.hipJoint.IsValid) return;
-            
-            // Transform from recording space to current world space
+            // Transform hip position to current coordinate system
             Vector3 worldPosition = TransformHipToCurrentSpace(frame.hipJoint.position);
             
+            // Update hip sphere
             if (hipSphere != null)
             {
                 hipSphere.transform.position = worldPosition;
@@ -263,50 +311,51 @@ namespace BodyTracking.Playback
             {
                 UpdatePathLine(worldPosition);
             }
+            
+            // Update character position if controller is available
+            if (characterController != null && characterController.IsInitialized)
+            {
+                characterController.SetTargetHipPosition(worldPosition);
+            }
         }
 
         /// <summary>
-        /// Transform hip position from recording space to current world space
+        /// Transform recorded hip position to current image target space
         /// </summary>
         private Vector3 TransformHipToCurrentSpace(Vector3 recordedPosition)
         {
-            // Transform from recording reference frame to current image target frame
+            // Transform from recorded reference space to current world space
             return currentImageTargetFrame.TransformPoint(recordedPosition);
         }
 
         /// <summary>
-        /// Update path line for hip movement
+        /// Update the path line with new position
         /// </summary>
         private void UpdatePathLine(Vector3 newPosition)
         {
-            if (pathLine == null) return;
-            
-            // Add new point to path
-            int currentPoints = pathLine.positionCount;
-            
-            if (currentPoints < maxPathPoints)
+            if (pathLine.positionCount >= maxPathPoints)
             {
-                pathLine.positionCount = currentPoints + 1;
-                pathLine.SetPosition(currentPoints, newPosition);
-            }
-            else
-            {
-                // Shift points and add new one
-                Vector3[] positions = new Vector3[maxPathPoints];
+                // Shift points back to make room for new point
+                Vector3[] positions = new Vector3[pathLine.positionCount];
                 pathLine.GetPositions(positions);
                 
-                for (int i = 0; i < maxPathPoints - 1; i++)
+                for (int i = 0; i < positions.Length - 1; i++)
                 {
                     positions[i] = positions[i + 1];
                 }
-                positions[maxPathPoints - 1] = newPosition;
-                
+                positions[positions.Length - 1] = newPosition;
                 pathLine.SetPositions(positions);
+            }
+            else
+            {
+                // Add new point
+                pathLine.positionCount++;
+                pathLine.SetPosition(pathLine.positionCount - 1, newPosition);
             }
         }
 
         /// <summary>
-        /// Hide all visualization elements
+        /// Hide visualization elements
         /// </summary>
         private void HideVisualization()
         {
@@ -323,7 +372,7 @@ namespace BodyTracking.Playback
 
         void OnDestroy()
         {
-            // Clean up visualization objects
+            // Clean up visualization
             if (hipSphere != null)
             {
                 Destroy(hipSphere);

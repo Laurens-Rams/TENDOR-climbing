@@ -33,7 +33,7 @@ namespace BodyTracking.Storage
         {
             if (recording == null || !recording.IsValid)
             {
-                Debug.LogError("[RecordingStorage] Invalid hip recording provided");
+               UnityEngine.Debug.LogError("[RecordingStorage] Invalid hip recording provided");
                 return false;
             }
             
@@ -56,13 +56,13 @@ namespace BodyTracking.Storage
                     case StorageFormat.Binary:
                         return SaveAsBinary(recording, filePath);
                     default:
-                        Debug.LogError($"[RecordingStorage] Unsupported format: {format}");
+                       UnityEngine.Debug.LogError($"[RecordingStorage] Unsupported format: {format}");
                         return false;
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"[RecordingStorage] Error saving hip recording: {e.Message}");
+               UnityEngine.Debug.LogError($"[RecordingStorage] Error saving hip recording: {e.Message}");
                 return false;
             }
         }
@@ -74,7 +74,7 @@ namespace BodyTracking.Storage
         {
             if (string.IsNullOrEmpty(fileName))
             {
-                Debug.LogError("[RecordingStorage] File name is required");
+               UnityEngine.Debug.LogError("[RecordingStorage] File name is required");
                 return null;
             }
             
@@ -84,7 +84,7 @@ namespace BodyTracking.Storage
                 
                 if (!File.Exists(filePath))
                 {
-                    Debug.LogWarning($"[RecordingStorage] File not found: {filePath}");
+                   UnityEngine.Debug.LogWarning($"[RecordingStorage] File not found: {filePath}");
                     return null;
                 }
                 
@@ -95,13 +95,13 @@ namespace BodyTracking.Storage
                     case StorageFormat.Binary:
                         return LoadFromBinary(filePath);
                     default:
-                        Debug.LogError($"[RecordingStorage] Unsupported format: {format}");
+                       UnityEngine.Debug.LogError($"[RecordingStorage] Unsupported format: {format}");
                         return null;
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"[RecordingStorage] Error loading hip recording: {e.Message}");
+               UnityEngine.Debug.LogError($"[RecordingStorage] Error loading hip recording: {e.Message}");
                 return null;
             }
         }
@@ -142,7 +142,7 @@ namespace BodyTracking.Storage
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
-                    Debug.Log($"[RecordingStorage] Deleted hip recording: {fileName}");
+                   UnityEngine.Debug.Log($"[RecordingStorage] Deleted hip recording: {fileName}");
                     return true;
                 }
                 
@@ -150,7 +150,7 @@ namespace BodyTracking.Storage
             }
             catch (Exception e)
             {
-                Debug.LogError($"[RecordingStorage] Error deleting hip recording: {e.Message}");
+               UnityEngine.Debug.LogError($"[RecordingStorage] Error deleting hip recording: {e.Message}");
                 return false;
             }
         }
@@ -197,7 +197,7 @@ namespace BodyTracking.Storage
             }
             catch (Exception e)
             {
-                Debug.LogError($"[RecordingStorage] Error getting metadata: {e.Message}");
+               UnityEngine.Debug.LogError($"[RecordingStorage] Error getting metadata: {e.Message}");
                 return null;
             }
         }
@@ -234,7 +234,7 @@ namespace BodyTracking.Storage
             string json = JsonUtility.ToJson(recording, true);
             File.WriteAllText(filePath, json);
             
-            Debug.Log($"[RecordingStorage] Saved hip recording as JSON: {filePath} ({new FileInfo(filePath).Length} bytes)");
+           UnityEngine.Debug.Log($"[RecordingStorage] Saved hip recording as JSON: {filePath} ({new FileInfo(filePath).Length} bytes)");
             return true;
         }
 
@@ -242,7 +242,7 @@ namespace BodyTracking.Storage
         {
             // For binary format, we'd implement custom serialization
             // For now, falling back to JSON for simplicity
-            Debug.LogWarning("[RecordingStorage] Binary format not yet implemented, using JSON");
+           UnityEngine.Debug.LogWarning("[RecordingStorage] Binary format not yet implemented, using JSON");
             return SaveAsJSON(recording, filePath.Replace(BINARY_EXTENSION, FILE_EXTENSION));
         }
 
@@ -251,7 +251,7 @@ namespace BodyTracking.Storage
             string json = File.ReadAllText(filePath);
             var recording = JsonUtility.FromJson<HipRecording>(json);
             
-            Debug.Log($"[RecordingStorage] Loaded hip recording from JSON: {recording.FrameCount} frames, {recording.duration:F2}s");
+           UnityEngine.Debug.Log($"[RecordingStorage] Loaded hip recording from JSON: {recording.FrameCount} frames, {recording.duration:F2}s");
             return recording;
         }
 
@@ -259,7 +259,7 @@ namespace BodyTracking.Storage
         {
             // For binary format, we'd implement custom deserialization
             // For now, falling back to JSON for simplicity
-            Debug.LogWarning("[RecordingStorage] Binary format not yet implemented, trying JSON");
+           UnityEngine.Debug.LogWarning("[RecordingStorage] Binary format not yet implemented, trying JSON");
             return LoadFromJSON(filePath.Replace(BINARY_EXTENSION, FILE_EXTENSION));
         }
 

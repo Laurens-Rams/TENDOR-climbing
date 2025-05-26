@@ -20,8 +20,8 @@ public class FileUploader : MonoBehaviour
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
-            Debug.Log(www.error);
+           UnityEngine.Debug.Log(www.error);
         else
-            Debug.Log(www.downloadHandler.text);
+           UnityEngine.Debug.Log(www.downloadHandler.text);
     }
 }

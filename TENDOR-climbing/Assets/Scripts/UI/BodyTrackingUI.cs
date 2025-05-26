@@ -37,7 +37,7 @@ namespace BodyTracking.UI
             
             if (controller == null)
             {
-                Debug.LogError("[BodyTrackingUI] BodyTrackingController not found");
+               UnityEngine.Debug.LogError("[BodyTrackingUI] BodyTrackingController not found");
                 return;
             }
             
@@ -66,7 +66,8 @@ namespace BodyTracking.UI
         void Update()
         {
             // Periodically update UI to ensure button states stay synchronized
-            if (Time.frameCount % 30 == 0) // Update every 30 frames (~twice per second)
+            // Reduced frequency for better performance
+            if (Time.frameCount % 90 == 0) // Update every 90 frames (~once per 1.5 seconds at 60fps)
             {
                 UpdateUI();
             }
@@ -110,10 +111,37 @@ namespace BodyTracking.UI
         {
             if (controller == null) return;
             
-            // Update mode text
+            // Update mode text with detailed information
             if (modeText != null)
             {
-                modeText.text = $"Mode: {controller.CurrentMode}";
+                string modeInfo = $"Mode: {controller.CurrentMode}";
+                
+                // Add additional context based on mode
+                switch (controller.CurrentMode)
+                {
+                    case OperationMode.Ready:
+                        if (controller.CanRecord)
+                            modeInfo += " (Ready to Record)";
+                        else if (!controller.IsInitialized)
+                            modeInfo += " (Initializing...)";
+                        else
+                            modeInfo += " (Waiting for Image Target)";
+                        break;
+                    case OperationMode.Recording:
+                        modeInfo += " 🔴";
+                        break;
+                    case OperationMode.Playing:
+                        modeInfo += " ▶️";
+                        break;
+                }
+                
+                modeText.text = modeInfo;
+            }
+            
+            // Update main status text with comprehensive system information
+            if (statusText != null)
+            {
+                statusText.text = GetDetailedSystemStatus();
             }
             
             // Update button states
@@ -125,6 +153,12 @@ namespace BodyTracking.UI
             if (recordButton != null)
             {
                 recordButton.interactable = canRecord;
+                // Update button text based on state
+                var buttonText = recordButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (buttonText != null)
+                {
+                    buttonText.text = canRecord ? "🔴 RECORD" : "⏸️ RECORD";
+                }
             }
             
             if (stopRecordButton != null)
@@ -135,6 +169,11 @@ namespace BodyTracking.UI
             if (playButton != null)
             {
                 playButton.interactable = canPlayback;
+                var buttonText = playButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (buttonText != null)
+                {
+                    buttonText.text = canPlayback ? "▶️ PLAY" : "⏸️ PLAY";
+                }
             }
             
             if (stopPlayButton != null)
@@ -146,6 +185,98 @@ namespace BodyTracking.UI
             {
                 loadButton.interactable = availableRecordings.Count > 0 && !isRecording && !isPlaying;
             }
+            
+            // Debug log for troubleshooting
+            if (Time.frameCount % 300 == 0) // Every 5 seconds at 60fps
+            {
+                Debug.Log($"[BodyTrackingUI] Status Update - CanRecord: {canRecord}, CanPlayback: {canPlayback}, IsRecording: {isRecording}, IsPlaying: {isPlaying}");
+            }
+        }
+
+        /// <summary>
+        /// Get detailed system status for display
+        /// </summary>
+        private string GetDetailedSystemStatus()
+        {
+            if (controller == null) return "❌ Controller not found";
+            
+            var status = new System.Text.StringBuilder();
+            
+            // System initialization status
+            if (!controller.IsInitialized)
+            {
+                status.AppendLine("🔄 System initializing...");
+                return status.ToString();
+            }
+            
+            status.AppendLine("✅ System initialized");
+            
+            // Image tracking status
+            var imageManager = controller.GetComponent<BodyTracking.AR.ARImageTargetManager>();
+            if (imageManager != null)
+            {
+                if (imageManager.IsImageDetected)
+                {
+                    status.AppendLine("📷 Image target detected");
+                    status.AppendLine($"📍 Target: {imageManager.ImageTargetTransform?.position}");
+                }
+                else
+                {
+                    status.AppendLine("🔍 Searching for image target...");
+                    status.AppendLine("📱 Point camera at wall target");
+                }
+            }
+            else
+            {
+                status.AppendLine("❌ Image manager not found");
+            }
+            
+            // Body tracking status
+            var humanBodyManager = FindObjectOfType<UnityEngine.XR.ARFoundation.ARHumanBodyManager>();
+            if (humanBodyManager != null)
+            {
+                status.AppendLine($"🚶 Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
+                
+                // Check for tracked bodies
+                var trackedBodies = FindObjectsOfType<UnityEngine.XR.ARFoundation.ARHumanBody>();
+                if (trackedBodies.Length > 0)
+                {
+                    status.AppendLine($"👤 Bodies detected: {trackedBodies.Length}");
+                }
+                else
+                {
+                    status.AppendLine("👤 No bodies detected");
+                }
+            }
+            
+            // Recording/Playback status
+            switch (controller.CurrentMode)
+            {
+                case OperationMode.Recording:
+                    status.AppendLine("🔴 RECORDING IN PROGRESS");
+                    break;
+                case OperationMode.Playing:
+                    status.AppendLine("▶️ PLAYBACK IN PROGRESS");
+                    break;
+                case OperationMode.Ready:
+                    if (controller.CanRecord)
+                        status.AppendLine("✅ Ready to record");
+                    if (controller.CanPlayback)
+                        status.AppendLine("✅ Ready to playback");
+                    break;
+            }
+            
+            // Available recordings
+            if (availableRecordings.Count > 0)
+            {
+                status.AppendLine($"💾 Recordings available: {availableRecordings.Count}");
+            }
+            else
+            {
+                status.AppendLine("💾 No recordings found");
+            }
+            
+            return status.ToString();
         }
 
         /// <summary>
@@ -185,11 +316,11 @@ namespace BodyTracking.UI
         {
             if (controller.StartRecording())
             {
-                Debug.Log("[BodyTrackingUI] Started hip recording");
+               UnityEngine.Debug.Log("[BodyTrackingUI] Started hip recording");
             }
             else
             {
-                Debug.LogWarning("[BodyTrackingUI] Failed to start hip recording");
+               UnityEngine.Debug.LogWarning("[BodyTrackingUI] Failed to start hip recording");
             }
         }
 
@@ -198,7 +329,7 @@ namespace BodyTracking.UI
             var recording = controller.StopRecording();
             if (recording != null)
             {
-                Debug.Log($"[BodyTrackingUI] Hip recording stopped: {recording.FrameCount} frames");
+               UnityEngine.Debug.Log($"[BodyTrackingUI] Hip recording stopped: {recording.FrameCount} frames");
                 RefreshRecordingsList(); // Update list with new recording
             }
         }
@@ -207,18 +338,18 @@ namespace BodyTracking.UI
         {
             if (controller.StartPlayback())
             {
-                Debug.Log("[BodyTrackingUI] Started hip playback");
+               UnityEngine.Debug.Log("[BodyTrackingUI] Started hip playback");
             }
             else
             {
-                Debug.LogWarning("[BodyTrackingUI] Failed to start hip playback");
+               UnityEngine.Debug.LogWarning("[BodyTrackingUI] Failed to start hip playback");
             }
         }
 
         private void OnStopPlayClicked()
         {
             controller.StopPlayback();
-            Debug.Log("[BodyTrackingUI] Stopped hip playback");
+           UnityEngine.Debug.Log("[BodyTrackingUI] Stopped hip playback");
         }
 
         private void OnLoadClicked()
@@ -231,12 +362,12 @@ namespace BodyTracking.UI
                     string fileName = availableRecordings[selectedIndex];
                     if (controller.LoadRecording(fileName))
                     {
-                        Debug.Log($"[BodyTrackingUI] Loaded hip recording: {fileName}");
+                       UnityEngine.Debug.Log($"[BodyTrackingUI] Loaded hip recording: {fileName}");
                         UpdateUI(); // Update button states after loading
                     }
                     else
                     {
-                        Debug.LogWarning($"[BodyTrackingUI] Failed to load hip recording: {fileName}");
+                       UnityEngine.Debug.LogWarning($"[BodyTrackingUI] Failed to load hip recording: {fileName}");
                     }
                 }
             }

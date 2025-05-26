@@ -9,15 +9,15 @@ namespace BodyTracking.AR
     {
         [Header("AR Settings")]
         public ARTrackedImageManager trackedImageManager;
-        public string targetImageName = "TENDORImage";
-        
-        [Header("Wall Visualization")]
-        public GameObject wallPrefab;
-        public Vector3 wallRotationOffset = new Vector3(0, 0, -90);
+        public string targetImageName = "Wall 1";
         
         private ARTrackedImage currentTrackedImage;
-        private GameObject wallInstance;
         private bool isImageDetected = false;
+        private bool contentAttachedToTarget = false;
+        
+        // Content management (like TrackingLogic)
+        private GameObject[] contents;
+        private GameObject activeContent;
         
         public event System.Action<Transform> OnImageTargetDetected;
         public event System.Action<Transform> OnImageTargetUpdated;
@@ -25,10 +25,18 @@ namespace BodyTracking.AR
         
         public bool IsImageDetected => isImageDetected && currentTrackedImage != null && currentTrackedImage.trackingState == TrackingState.Tracking;
         public Transform ImageTargetTransform => (IsImageDetected) ? currentTrackedImage.transform : null;
-        public GameObject WallInstance => wallInstance;
 
         void OnEnable()
         {
+            // Find all child GameObjects that could be content
+            contents = new GameObject[transform.childCount];
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                contents[i] = transform.GetChild(i).gameObject;
+                // Initially deactivate all content
+                contents[i].SetActive(false);
+            }
+            
             if (trackedImageManager == null)
             {
                 trackedImageManager = FindObjectOfType<ARTrackedImageManager>();
@@ -37,6 +45,11 @@ namespace BodyTracking.AR
             if (trackedImageManager != null)
             {
                 trackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
+                Debug.Log("[ARImageTargetManager] Subscribed to tracked images changed events");
+            }
+            else
+            {
+                Debug.LogError("[ARImageTargetManager] ARTrackedImageManager not found!");
             }
         }
 
@@ -50,45 +63,83 @@ namespace BodyTracking.AR
 
         private void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
         {
+            if (contentAttachedToTarget)
+            {
+                Debug.Log("[ARImageTargetManager] Content already attached, ignoring further image tracking");
+                return; // Stop further image target searching if content is already attached
+            }
+
             foreach (var trackedImage in eventArgs.added)
             {
-                HandleImageAdded(trackedImage);
+                Debug.Log($"[ARImageTargetManager] Image added: {trackedImage.referenceImage.name}");
+                if (TryActivateContent(trackedImage))
+                    break;
             }
 
             foreach (var trackedImage in eventArgs.updated)
             {
-                HandleImageUpdated(trackedImage);
+                if (trackedImage.trackingState == TrackingState.Tracking)
+                {
+                    Debug.Log($"[ARImageTargetManager] Image updated and tracking: {trackedImage.referenceImage.name}");
+                    if (TryActivateContent(trackedImage))
+                        break;
+                }
+                else
+                {
+                    Debug.Log($"[ARImageTargetManager] Image updated but not tracking: {trackedImage.referenceImage.name}, state: {trackedImage.trackingState}");
+                }
             }
             
             foreach (var trackedImage in eventArgs.removed)
             {
+                Debug.Log($"[ARImageTargetManager] Image removed: {trackedImage.referenceImage.name}");
                 HandleImageRemoved(trackedImage);
             }
         }
 
-        private void HandleImageAdded(ARTrackedImage trackedImage)
+        private bool TryActivateContent(ARTrackedImage trackedImage)
         {
-            if (trackedImage.referenceImage.name != targetImageName) return;
+            if (contentAttachedToTarget || trackedImage == null)
+                return false;
+
+            if (trackedImage.referenceImage.name != targetImageName)
+            {
+                Debug.Log($"[ARImageTargetManager] Ignoring image '{trackedImage.referenceImage.name}', looking for '{targetImageName}'");
+                return false;
+            }
+
+            Debug.Log($"[ARImageTargetManager] ✅ Found target image: {trackedImage.referenceImage.name}");
             
             currentTrackedImage = trackedImage;
             isImageDetected = true;
             
-            CreateWallVisualization(trackedImage);
-            OnImageTargetDetected?.Invoke(trackedImage.transform);
-        }
-
-        private void HandleImageUpdated(ARTrackedImage trackedImage)
-        {
-            if (trackedImage.referenceImage.name != targetImageName) return;
+            // Find and activate content with matching name (like TrackingLogic does)
+            activeContent = System.Array.Find(contents, content => content != null && content.name == trackedImage.referenceImage.name);
             
-            currentTrackedImage = trackedImage;
-            
-            if (trackedImage.trackingState == TrackingState.Tracking)
+            if (activeContent != null)
             {
-                isImageDetected = true;
-                UpdateWallVisualization(trackedImage);
-                OnImageTargetUpdated?.Invoke(trackedImage.transform);
+                // Attach content to the tracked image (like TrackingLogic)
+                activeContent.transform.parent = trackedImage.transform;
+                activeContent.transform.localPosition = Vector3.zero;
+                activeContent.transform.localRotation = Quaternion.identity;
+                
+                // Activate the content
+                activeContent.SetActive(true);
+                
+                Debug.Log($"[ARImageTargetManager] Activated content '{activeContent.name}' for image '{trackedImage.referenceImage.name}'");
             }
+            else
+            {
+                Debug.LogWarning($"[ARImageTargetManager] No content found with name '{trackedImage.referenceImage.name}'. Make sure you have a child GameObject with this exact name.");
+            }
+            
+            contentAttachedToTarget = true;
+            
+            OnImageTargetDetected?.Invoke(trackedImage.transform);
+            
+            Debug.Log($"[ARImageTargetManager] Content successfully attached to image target at position: {trackedImage.transform.position}");
+            
+            return true;
         }
 
         private void HandleImageRemoved(ARTrackedImage trackedImage)
@@ -97,28 +148,30 @@ namespace BodyTracking.AR
             
             currentTrackedImage = null;
             isImageDetected = false;
-            OnImageTargetLost?.Invoke();
-        }
-
-        private void CreateWallVisualization(ARTrackedImage trackedImage)
-        {
-            if (wallPrefab == null) return;
+            contentAttachedToTarget = false;
             
-            if (wallInstance != null)
+            // Deactivate and detach content
+            if (activeContent != null)
             {
-                Destroy(wallInstance);
+                activeContent.SetActive(false);
+                activeContent.transform.parent = this.transform; // Return to original parent
+                activeContent = null;
             }
             
-            wallInstance = Instantiate(wallPrefab);
-            UpdateWallVisualization(trackedImage);
+            OnImageTargetLost?.Invoke();
+            Debug.Log("[ARImageTargetManager] Image target lost, content detached");
         }
 
-        private void UpdateWallVisualization(ARTrackedImage trackedImage)
+        void Update()
         {
-            if (wallInstance == null) return;
-            
-            wallInstance.transform.position = trackedImage.transform.position;
-            wallInstance.transform.rotation = trackedImage.transform.rotation * Quaternion.Euler(wallRotationOffset);
+            // Update content position if we have a tracked image and active content
+            if (currentTrackedImage != null && activeContent != null)
+            {
+                if (currentTrackedImage.trackingState == TrackingState.Tracking)
+                {
+                    OnImageTargetUpdated?.Invoke(currentTrackedImage.transform);
+                }
+            }
         }
 
         public CoordinateFrame GetCurrentCoordinateFrame()
@@ -128,6 +181,28 @@ namespace BodyTracking.AR
                 return new CoordinateFrame(currentTrackedImage.transform);
             }
             return default;
+        }
+
+        // Public methods for debugging
+        public void ToggleContentVisibility()
+        {
+            if (activeContent != null)
+            {
+                activeContent.SetActive(!activeContent.activeSelf);
+                Debug.Log($"[ARImageTargetManager] Content visibility toggled: {activeContent.activeSelf}");
+            }
+        }
+
+        public void ListAvailableContent()
+        {
+            Debug.Log($"[ARImageTargetManager] Available content objects:");
+            for (int i = 0; i < contents.Length; i++)
+            {
+                if (contents[i] != null)
+                {
+                    Debug.Log($"  - {contents[i].name} (active: {contents[i].activeSelf})");
+                }
+            }
         }
     }
 } 
