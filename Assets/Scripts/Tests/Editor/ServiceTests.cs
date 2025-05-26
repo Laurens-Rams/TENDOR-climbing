@@ -77,7 +77,7 @@ namespace TENDOR.Tests.Editor
             Assert.AreEqual(go.transform.rotation, pose.rotation);
             Assert.Greater(pose.timestamp, 0f);
 
-            Object.DestroyImmediate(go);
+            UnityEngine.Object.DestroyImmediate(go);
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace TENDOR.Tests.Editor
             Assert.AreEqual(targetPosition, go.transform.position);
             Assert.AreEqual(targetRotation, go.transform.rotation);
 
-            Object.DestroyImmediate(go);
+            UnityEngine.Object.DestroyImmediate(go);
         }
 
         [Test]
@@ -209,7 +209,7 @@ namespace TENDOR.Tests.Editor
         {
             if (testGameObject != null)
             {
-                Object.DestroyImmediate(testGameObject);
+                UnityEngine.Object.DestroyImmediate(testGameObject);
             }
         }
 

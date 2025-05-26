@@ -3,6 +3,10 @@ using UnityEngine.XR.ARFoundation;
 using TENDOR.Core;
 using TENDOR.Services;
 using TENDOR.Services.AR;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Testing
 {
@@ -31,9 +35,9 @@ namespace TENDOR.Testing
             if (!enableRemoteTesting) return;
             
             // Find AR components
-            arSession = FindObjectOfType<ARSession>();
-            cameraManager = FindObjectOfType<ARCameraManager>();
-            trackedImageManager = FindObjectOfType<ARTrackedImageManager>();
+            arSession = UnityEngine.Object.FindFirstObjectByType<ARSession>();
+            cameraManager = UnityEngine.Object.FindFirstObjectByType<ARCameraManager>();
+            trackedImageManager = UnityEngine.Object.FindFirstObjectByType<ARTrackedImageManager>();
             stateManager = GameStateManager.Instance;
             
             Logger.Log("🎮 AR Remote Test Manager initialized", "AR_REMOTE");
@@ -76,7 +80,11 @@ namespace TENDOR.Testing
             GUILayout.BeginArea(new Rect(10, 10, 300, 400));
             GUILayout.BeginVertical("box");
             
+#if UNITY_EDITOR
             GUILayout.Label("🎮 AR Remote Testing", EditorStyles.boldLabel);
+#else
+            GUILayout.Label("🎮 AR Remote Testing", GUI.skin.label);
+#endif
             GUILayout.Space(10);
             
             // AR Status
@@ -135,7 +143,7 @@ namespace TENDOR.Testing
             if (stateManager != null)
             {
                 Logger.Log("⏹️ Testing: Stop Recording", "AR_REMOTE");
-                stateManager.StopRecording();
+                stateManager.StopRecording("/fake/test/video.mp4");
             }
         }
         
@@ -152,7 +160,7 @@ namespace TENDOR.Testing
                         stateManager.StartRecording();
                         break;
                     case GameState.Recording:
-                        stateManager.StopRecording();
+                        stateManager.StopRecording("/fake/test/video.mp4");
                         break;
                     case GameState.Processing:
                         Logger.Log("⏳ Processing state - waiting...", "AR_REMOTE");

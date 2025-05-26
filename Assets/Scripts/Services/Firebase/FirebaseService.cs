@@ -55,6 +55,9 @@ namespace TENDOR.Services.Firebase
                 //     }
                 // });
 
+                // Simulate initialization delay
+                await Task.Delay(100);
+
                 isInitialized = true;
                 Logger.Log("Firebase services initialized successfully", "FIREBASE");
             }
@@ -78,6 +81,9 @@ namespace TENDOR.Services.Firebase
                 // TODO: Implement Firebase Auth
                 // var result = await FirebaseAuth.DefaultInstance.SignInWithEmailAndPasswordAsync(email, password);
                 // return result.User != null;
+                
+                // Simulate authentication delay
+                await Task.Delay(500);
                 
                 return true; // Placeholder
             }
@@ -256,6 +262,9 @@ namespace TENDOR.Services.Firebase
                 // var docRef = db.Collection("climbs").Document(climbData.id);
                 // await docRef.SetAsync(climbData);
 
+                // Simulate database operation delay
+                await Task.Delay(200);
+
                 Logger.Log($"Climb document created successfully: {climbData.id}", "FIRESTORE");
                 return true;
             }
@@ -286,6 +295,9 @@ namespace TENDOR.Services.Firebase
                 // if (!string.IsNullOrEmpty(jsonUrl)) updates["jsonUrl"] = jsonUrl;
                 // await docRef.UpdateAsync(updates);
 
+                // Simulate database operation delay
+                await Task.Delay(200);
+
                 Logger.Log($"Climb status updated successfully: {climbId}", "FIRESTORE");
                 return true;
             }
@@ -310,6 +322,9 @@ namespace TENDOR.Services.Firebase
                 // var query = db.Collection("boulders").WhereEqualTo("isActive", true);
                 // var snapshot = await query.GetSnapshotAsync();
                 // return snapshot.Documents.Select(doc => doc.ConvertTo<BoulderData>()).ToArray();
+
+                // Simulate database query delay
+                await Task.Delay(300);
 
                 // Return placeholder data
                 return new BoulderData[]

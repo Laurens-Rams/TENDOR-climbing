@@ -34,6 +34,11 @@ namespace TENDOR.Services.Firebase
         {
             Logger.Log("🔥 Initializing Firebase (Stub)...", "FIREBASE");
             
+            if (enablePersistence)
+            {
+                Logger.Log("📦 Persistence enabled", "FIREBASE");
+            }
+            
             // Stub implementation - replace with actual Firebase initialization
             App = new object();
             Auth = new object();

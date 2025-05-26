@@ -3,98 +3,134 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using TENDOR.Core;
 using TENDOR.Services;
-using TENDOR.Services.Firebase;
 using TENDOR.Services.AR;
+using TENDOR.Services.Firebase;
 using TENDOR.Runtime.Models;
+using System.Threading.Tasks;
 using Logger = TENDOR.Core.Logger;
 
-namespace TENDOR.Tests
+/// <summary>
+/// Compilation test to verify all dependencies and references are working
+/// </summary>
+public class CompilationTest : MonoBehaviour
 {
-    /// <summary>
-    /// Simple compilation test to verify all services and dependencies work correctly
-    /// </summary>
-    public class CompilationTest : MonoBehaviour
+    [Header("Compilation Test")]
+    [SerializeField] private bool runTestOnStart = false;
+    
+    private void Start()
     {
-        [Header("Compilation Test")]
-        [SerializeField] private bool runTestOnStart = true;
-        
-        private void Start()
+        if (runTestOnStart)
         {
-            if (runTestOnStart)
-            {
-                RunCompilationTest();
-            }
+            RunCompilationTest();
+        }
+    }
+    
+    public async void RunCompilationTest()
+    {
+        Logger.Log("🧪 Running compilation test...", "TEST");
+        
+        // Test Core components
+        TestCoreComponents();
+        
+        // Test AR components
+        TestARComponents();
+        
+        // Test Firebase components
+        await TestFirebaseComponents();
+        
+        // Test Models
+        TestModels();
+        
+        Logger.Log("✅ Compilation test completed successfully!", "TEST");
+    }
+    
+    private void TestCoreComponents()
+    {
+        Logger.Log("Testing Core components...", "TEST");
+        
+        // Test Logger
+        Logger.LogDebug("Debug message", "TEST");
+        Logger.LogWarning("Warning message", "TEST");
+        Logger.LogError("Error message", "TEST");
+        
+        Logger.Log("✅ Core components working", "TEST");
+    }
+    
+    private void TestARComponents()
+    {
+        Logger.Log("Testing AR components...", "TEST");
+        
+        // Test AR Foundation types
+        var trackingState = TrackingState.Tracking;
+        Logger.Log($"TrackingState: {trackingState}", "TEST");
+        
+        // Test AR Service
+        if (ARService.Instance != null)
+        {
+            Logger.Log($"AR Service initialized: {ARService.Instance.IsInitialized}", "TEST");
         }
         
-        public void RunCompilationTest()
+        // Test AR Subsystems availability
+        Logger.Log("AR Subsystems types available", "TEST");
+        
+        Logger.Log("✅ AR components working", "TEST");
+    }
+    
+    private async Task TestFirebaseComponents()
+    {
+        Logger.Log("Testing Firebase components...", "TEST");
+        
+        // Test Firebase Service
+        if (FirebaseService.Instance != null)
         {
-            Logger.Log("🧪 Running compilation test...", "TEST");
+            Logger.Log($"Firebase Service initialized: {FirebaseService.Instance.IsInitialized}", "TEST");
             
-            // Test Logger
-            Logger.Log("✅ Logger working", "TEST");
-            Logger.LogWarning("⚠️ Logger warning test", "TEST");
-            Logger.LogError("❌ Logger error test", "TEST");
+            // Test async methods
+            var userId = FirebaseService.Instance.GetCurrentUserId();
+            Logger.Log($"User ID: {userId}", "TEST");
             
-            // Test GameStateManager
-            if (GameStateManager.Instance != null)
-            {
-                Logger.Log($"✅ GameStateManager: Current state = {GameStateManager.Instance.GetCurrentState()}", "TEST");
-            }
-            else
-            {
-                Logger.LogWarning("⚠️ GameStateManager instance not found", "TEST");
-            }
+            var isAuth = FirebaseService.Instance.IsAuthenticated();
+            Logger.Log($"Is authenticated: {isAuth}", "TEST");
             
-            // Test FirebaseService
-            if (FirebaseService.Instance != null)
-            {
-                Logger.Log($"✅ FirebaseService: Initialized = {FirebaseService.Instance.IsInitialized}", "TEST");
-                Logger.Log($"✅ FirebaseService: User ID = {FirebaseService.Instance.GetCurrentUserId()}", "TEST");
-            }
-            else
-            {
-                Logger.LogWarning("⚠️ FirebaseService instance not found", "TEST");
-            }
-            
-            // Test ARService
-            if (ARService.Instance != null)
-            {
-                Logger.Log($"✅ ARService: Initialized = {ARService.Instance.IsInitialized}", "TEST");
-                
-                // Test AR Subsystems types are accessible
-                var cameraManager = ARService.Instance.GetCameraManager();
-                var trackedImageManager = ARService.Instance.GetTrackedImageManager();
-                Logger.Log($"✅ ARService: Camera Manager = {(cameraManager != null ? "Found" : "Not Found")}", "TEST");
-                Logger.Log($"✅ ARService: Tracked Image Manager = {(trackedImageManager != null ? "Found" : "Not Found")}", "TEST");
-            }
-            else
-            {
-                Logger.LogWarning("⚠️ ARService instance not found", "TEST");
-            }
-            
-            // Test data models
-            var testClimb = new ClimbData
-            {
-                id = "test-climb-123",
-                ownerUid = "test-user",
-                status = ClimbStatus.Ready
-            };
-            Logger.Log($"✅ ClimbData model: ID = {testClimb.id}, Status = {testClimb.status}", "TEST");
-            
-            var testBoulder = new BoulderData
-            {
-                id = "test-boulder-456",
-                name = "Test Boulder",
-                grade = "V5",
-                isActive = true
-            };
-            Logger.Log($"✅ BoulderData model: Name = {testBoulder.name}, Grade = {testBoulder.grade}", "TEST");
-            
-            // Test AR Subsystems types are accessible
-            var trackingState = TrackingState.Tracking;
-            Logger.Log($"✅ AR Subsystems: TrackingState.Tracking = {trackingState}", "TEST");
-            
-            Logger.Log("🎉 Compilation test completed successfully!", "TEST");
+            // Test async sign in
+            var signInResult = await FirebaseService.Instance.SignInAsync("test@example.com", "password");
+            Logger.Log($"Sign in result: {signInResult}", "TEST");
         }
+        
+        Logger.Log("✅ Firebase components working", "TEST");
+    }
+    
+    private void TestModels()
+    {
+        Logger.Log("Testing Models...", "TEST");
+        
+        // Test PoseData
+        var pose = new PoseData(Vector3.zero, Quaternion.identity, Time.time);
+        Logger.Log($"PoseData created: {pose.timestamp}", "TEST");
+        
+        // Test BodyTrackingData
+        var bodyData = new BodyTrackingData(100);
+        Logger.Log($"BodyTrackingData created: {bodyData.recordingId}", "TEST");
+        
+        // Test ClimbData
+        var climbData = new ClimbData();
+        Logger.Log($"ClimbData created: {climbData.id}", "TEST");
+        
+        // Test BoulderData
+        var boulderData = new BoulderData();
+        Logger.Log($"BoulderData created: {boulderData.id}", "TEST");
+        
+        // Test Enums
+        var gameState = GameState.Idle;
+        var climbStatus = ClimbStatus.Ready;
+        Logger.Log($"Enums: {gameState}, {climbStatus}", "TEST");
+        
+        Logger.Log("✅ Models working", "TEST");
+    }
+    
+    [ContextMenu("Run Compilation Test")]
+    public void RunTestFromMenu()
+    {
+        RunCompilationTest();
     }
 } 
