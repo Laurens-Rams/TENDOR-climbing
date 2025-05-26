@@ -1,12 +1,16 @@
 using System.Collections;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using TENDOR.Core;
 using TENDOR.Services;
 using TENDOR.Services.AR;
 using TENDOR.Services.Firebase;
-using TENDOR.Core;
+using TENDOR.Runtime.Models;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Tests.Runtime
 {
@@ -47,27 +51,33 @@ namespace TENDOR.Tests.Runtime
                 Object.DestroyImmediate(testGameStateManager);
 
             // Clean up XR Origin
-            var xrOrigin = Object.FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+            var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
             if (xrOrigin != null)
                 Object.DestroyImmediate(xrOrigin.gameObject);
         }
 
         private void SetupBasicXROrigin()
         {
-            // Create a basic XR Origin for testing
-            var xrOriginGO = new GameObject("XR Origin");
-            var xrOrigin = xrOriginGO.AddComponent<Unity.XR.CoreUtils.XROrigin>();
-            
-            // Create camera
-            var cameraGO = new GameObject("Main Camera");
-            cameraGO.transform.SetParent(xrOriginGO.transform);
-            var camera = cameraGO.AddComponent<Camera>();
-            xrOrigin.Camera = camera;
-
-            // Add AR components
-            cameraGO.AddComponent<ARCameraManager>();
-            xrOriginGO.AddComponent<ARTrackedImageManager>();
-            xrOriginGO.AddComponent<ARHumanBodyManager>();
+            // Create basic XR Origin if none exists
+            var existingOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
+            if (existingOrigin == null)
+            {
+                var xrOriginGO = new GameObject("XR Origin");
+                var xrOrigin = xrOriginGO.AddComponent<Unity.XR.CoreUtils.XROrigin>();
+                
+                // Create camera offset
+                var cameraOffsetGO = new GameObject("Camera Offset");
+                cameraOffsetGO.transform.SetParent(xrOriginGO.transform);
+                
+                // Create main camera
+                var mainCameraGO = new GameObject("Main Camera");
+                mainCameraGO.transform.SetParent(cameraOffsetGO.transform);
+                var camera = mainCameraGO.AddComponent<Camera>();
+                
+                // Set up XR Origin references
+                xrOrigin.CameraFloorOffsetObject = cameraOffsetGO;
+                xrOrigin.Camera = camera;
+            }
         }
 
         [UnityTest]
@@ -376,7 +386,7 @@ namespace TENDOR.Tests.Runtime
             Assert.IsNotNull(currentClimb);
             Assert.AreEqual("fake-fbx-url", currentClimb.fbxUrl);
             Assert.AreEqual("fake-json-url", currentClimb.jsonUrl);
-            Assert.AreEqual(ClimbStatus.Ready, currentClimb.status);
+            Assert.AreEqual(TENDOR.Runtime.Models.ClimbStatus.Ready, currentClimb.status);
         }
     }
 } 

@@ -1,11 +1,14 @@
+using System;
+using System.Collections;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using System.Collections;
-using System.Threading.Tasks;
 using TENDOR.Core;
-using TENDOR.Runtime.Models;
+using TENDOR.Services;
 using TENDOR.Services.Firebase;
+using TENDOR.Runtime.Models;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Tests.Editor
 {
@@ -170,10 +173,10 @@ namespace TENDOR.Tests.Editor
         [Test]
         public void GameState_EnumValues()
         {
-            Assert.AreEqual(0, (int)GameState.Idle);
-            Assert.AreEqual(1, (int)GameState.Recording);
-            Assert.AreEqual(2, (int)GameState.Processing);
-            Assert.AreEqual(3, (int)GameState.Playback);
+            Assert.AreEqual(0, (int)TENDOR.Services.GameState.Idle);
+            Assert.AreEqual(1, (int)TENDOR.Services.GameState.Recording);
+            Assert.AreEqual(2, (int)TENDOR.Services.GameState.Processing);
+            Assert.AreEqual(3, (int)TENDOR.Services.GameState.Playback);
         }
 
         [Test]
@@ -257,7 +260,7 @@ namespace TENDOR.Tests.Editor
         [UnityTest]
         public IEnumerator FirebaseService_UploadVideoAsync()
         {
-            var progress = new Progress<float>();
+            var progress = new System.Progress<float>();
             var progressValues = new System.Collections.Generic.List<float>();
             progress.ProgressChanged += (sender, value) => progressValues.Add(value);
 

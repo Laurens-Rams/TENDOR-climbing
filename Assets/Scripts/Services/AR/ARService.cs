@@ -54,20 +54,20 @@ namespace TENDOR.Services.AR
             }
         }
 
-        private void Start()
+        private async void Start()
         {
             if (autoLoadImageLibrary)
             {
-                LoadImageLibraryAsync();
+                await LoadImageLibraryAsync();
             }
         }
 
-        private void Update()
+        private async void Update()
         {
             // Periodically refresh image library
             if (autoLoadImageLibrary && Time.time - lastLibraryRefresh > imageLibraryRefreshInterval)
             {
-                LoadImageLibraryAsync();
+                await LoadImageLibraryAsync();
             }
         }
 
@@ -105,7 +105,7 @@ namespace TENDOR.Services.AR
         {
             if (arSession == null)
             {
-                arSession = FindObjectOfType<ARSession>();
+                arSession = FindFirstObjectByType<ARSession>();
             }
 
             if (arSession == null)
@@ -124,13 +124,13 @@ namespace TENDOR.Services.AR
         {
             if (arCameraManager == null)
             {
-                arCameraManager = FindObjectOfType<ARCameraManager>();
+                arCameraManager = FindFirstObjectByType<ARCameraManager>();
             }
 
             if (arCameraManager == null)
             {
                 // Look for XR Origin or create one
-                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
                 if (xrOrigin == null)
                 {
                     Logger.LogError("No XR Origin found. Please ensure XR Origin is set up in the scene.", "AR");
@@ -154,12 +154,12 @@ namespace TENDOR.Services.AR
         {
             if (arTrackedImageManager == null)
             {
-                arTrackedImageManager = FindObjectOfType<ARTrackedImageManager>();
+                arTrackedImageManager = FindFirstObjectByType<ARTrackedImageManager>();
             }
 
             if (arTrackedImageManager == null)
             {
-                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
                 if (xrOrigin != null)
                 {
                     arTrackedImageManager = xrOrigin.gameObject.AddComponent<ARTrackedImageManager>();
@@ -176,12 +176,12 @@ namespace TENDOR.Services.AR
         {
             if (arHumanBodyManager == null)
             {
-                arHumanBodyManager = FindObjectOfType<ARHumanBodyManager>();
+                arHumanBodyManager = FindFirstObjectByType<ARHumanBodyManager>();
             }
 
             if (arHumanBodyManager == null)
             {
-                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
                 if (xrOrigin != null)
                 {
                     arHumanBodyManager = xrOrigin.gameObject.AddComponent<ARHumanBodyManager>();
@@ -198,12 +198,12 @@ namespace TENDOR.Services.AR
         {
             if (arOcclusionManager == null)
             {
-                arOcclusionManager = FindObjectOfType<AROcclusionManager>();
+                arOcclusionManager = FindFirstObjectByType<AROcclusionManager>();
             }
 
             if (arOcclusionManager == null)
             {
-                var xrOrigin = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+                var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
                 if (xrOrigin != null && arCameraManager != null)
                 {
                     arOcclusionManager = arCameraManager.gameObject.AddComponent<AROcclusionManager>();
@@ -374,9 +374,9 @@ namespace TENDOR.Services.AR
         /// <summary>
         /// Manually refresh image library
         /// </summary>
-        public void RefreshImageLibrary()
+        public async void RefreshImageLibrary()
         {
-            LoadImageLibraryAsync();
+            await LoadImageLibraryAsync();
         }
 
         #endregion

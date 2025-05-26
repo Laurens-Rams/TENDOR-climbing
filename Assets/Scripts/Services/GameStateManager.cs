@@ -218,12 +218,12 @@ namespace TENDOR.Services
         /// <summary>
         /// Handle processing error (Processing -> Idle)
         /// </summary>
-        public void HandleProcessingError(string errorMessage)
+        public async void HandleProcessingError(string errorMessage)
         {
             if (currentClimb != null)
             {
                 currentClimb.status = ClimbStatus.Error;
-                FirebaseService.Instance.UpdateClimbStatusAsync(currentClimb.id, ClimbStatus.Error);
+                await FirebaseService.Instance.UpdateClimbStatusAsync(currentClimb.id, ClimbStatus.Error);
             }
 
             Logger.LogError($"Processing failed: {errorMessage}", "STATE");
