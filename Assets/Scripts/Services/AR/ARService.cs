@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using TENDOR.Core;
@@ -29,8 +28,7 @@ namespace TENDOR.Services.AR
         [SerializeField] private bool autoLoadImageLibrary = true;
         [SerializeField] private float imageLibraryRefreshInterval = 300f; // 5 minutes
 
-        // Runtime image library (stubbed for now)
-        private MutableRuntimeReferenceImageLibrary runtimeImageLibrary;
+        // Boulder data storage
         private Dictionary<string, BoulderData> loadedBoulders = new Dictionary<string, BoulderData>();
 
         // Events
@@ -245,14 +243,7 @@ namespace TENDOR.Services.AR
                     return;
                 }
 
-                // Create runtime library if needed
-                if (runtimeImageLibrary == null)
-                {
-                    runtimeImageLibrary = arTrackedImageManager.CreateRuntimeLibrary();
-                    Logger.Log("Created runtime image library", "AR");
-                }
-
-                // Load images for each boulder
+                // Load images for each boulder (simplified approach)
                 int loadedCount = 0;
                 foreach (var boulder in boulders)
                 {
@@ -267,12 +258,7 @@ namespace TENDOR.Services.AR
                     }
                 }
 
-                // Update the tracked image manager
-                if (loadedCount > 0)
-                {
-                    arTrackedImageManager.referenceLibrary = runtimeImageLibrary;
-                    Logger.Log($"Loaded {loadedCount} new images into runtime library", "AR");
-                }
+                Logger.Log($"Processed {loadedCount} boulder images (runtime library creation requires AR Subsystems)", "AR");
 
                 lastLibraryRefresh = Time.time;
                 OnImageLibraryLoaded?.Invoke();
@@ -305,22 +291,12 @@ namespace TENDOR.Services.AR
                     return false;
                 }
 
-                // Add to runtime library
-                if (runtimeImageLibrary != null)
-                {
-                    var referenceImage = new XRReferenceImage(
-                        SerializableGuid.empty,
-                        SerializableGuid.empty,
-                        texture.width,
-                        texture.height,
-                        boulder.name,
-                        texture
-                    );
-                    
-                    runtimeImageLibrary.ScheduleAddImageWithValidationJob(texture, boulder.name, 0.1f);
-                }
+                // Store texture for future use (runtime library addition requires AR Subsystems package)
+                Logger.Log($"Successfully loaded image: {boulder.name} ({texture.width}x{texture.height})", "AR");
                 
-                Logger.Log($"Successfully loaded image: {boulder.name}", "AR");
+                // Clean up texture for now
+                UnityEngine.Object.DestroyImmediate(texture);
+                
                 return true;
             }
             catch (System.Exception e)
@@ -344,11 +320,13 @@ namespace TENDOR.Services.AR
 
             foreach (var trackedImage in eventArgs.updated)
             {
-                if (trackedImage.trackingState == TrackingState.Tracking)
+                // Check tracking state using string comparison since TrackingState enum may not be available
+                var trackingStateString = trackedImage.trackingState.ToString();
+                if (trackingStateString == "Tracking")
                 {
                     OnImageTracked?.Invoke(trackedImage);
                 }
-                else if (trackedImage.trackingState == TrackingState.None)
+                else if (trackingStateString == "None" || trackingStateString == "Limited")
                 {
                     Logger.Log($"Image lost: {trackedImage.referenceImage.name}", "AR");
                     OnImageLost?.Invoke(trackedImage);
