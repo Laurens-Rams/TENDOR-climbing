@@ -5,6 +5,7 @@
         "TENDOR.Core",
         "TENDOR.Runtime",
         "Unity.XR.ARFoundation",
+        "Unity.XR.ARSubsystems",
         "Unity.XR.CoreUtils",
         "Firebase.App",
         "Firebase.Auth",
