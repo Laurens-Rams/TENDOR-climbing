@@ -176,47 +176,104 @@ namespace BodyTracking.Recording
         {
             int width, height;
             bool usedActualImageSize = false;
+            string resolutionSource = "Unknown";
             
             // Always try to use the camera's native resolution like the working VideoRecorder
             // First try to get actual camera image size (most accurate)
             XRCpuImage testImage;
-            if (Globals.CameraManager != null && Globals.CameraManager.TryAcquireLatestCpuImage(out testImage))
+            
+            Debug.Log("[SynchronizedVideoRecorder] === CAMERA RESOLUTION DEBUG ===");
+            
+            // Check Globals.CameraManager first
+            if (Globals.CameraManager != null)
             {
-                width = testImage.width;
-                height = testImage.height;
-                usedActualImageSize = true;
-                testImage.Dispose();
-                Debug.Log($"[SynchronizedVideoRecorder] Using actual camera image size: {width}x{height}");
-            }
-            else if (arCameraManager != null && arCameraManager.TryAcquireLatestCpuImage(out testImage))
-            {
-                width = testImage.width;
-                height = testImage.height;
-                usedActualImageSize = true;
-                testImage.Dispose();
-                Debug.Log($"[SynchronizedVideoRecorder] Using actual camera image size from arCameraManager: {width}x{height}");
-            }
-            // Use camera configuration like the working VideoRecorder
-            else if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
-            {
-                var config = Globals.CameraManager.currentConfiguration.Value;
-                width = (int)config.width;
-                height = (int)config.height;
-                Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
-            }
-            else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
-            {
-                var config = arCameraManager.currentConfiguration.Value;
-                width = (int)config.width;
-                height = (int)config.height;
-                Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from arCameraManager: {width}x{height}");
+                Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager available: {Globals.CameraManager != null}");
+                if (Globals.CameraManager.currentConfiguration.HasValue)
+                {
+                    var config = Globals.CameraManager.currentConfiguration.Value;
+                    Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager config: {config.width}x{config.height}");
+                }
+                else
+                {
+                    Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager has no current configuration");
+                }
+                
+                bool canAcquireImage = Globals.CameraManager.TryAcquireLatestCpuImage(out testImage);
+                Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
+                if (canAcquireImage)
+                {
+                    Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager actual image size: {testImage.width}x{testImage.height}");
+                    width = testImage.width;
+                    height = testImage.height;
+                    usedActualImageSize = true;
+                    resolutionSource = "Globals.CameraManager actual image";
+                    testImage.Dispose();
+                }
             }
             else
             {
-                // Only use custom resolution as absolute last resort
-                width = customResolution.x;
-                height = customResolution.y;
-                Debug.LogWarning($"[SynchronizedVideoRecorder] No camera data available, using custom resolution as fallback: {width}x{height}");
+                Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager is null");
+            }
+            
+            // Check arCameraManager if we haven't found a source yet
+            if (!usedActualImageSize && arCameraManager != null)
+            {
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager available: {arCameraManager != null}");
+                if (arCameraManager.currentConfiguration.HasValue)
+                {
+                    var config = arCameraManager.currentConfiguration.Value;
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config: {config.width}x{config.height}");
+                }
+                else
+                {
+                    Debug.Log("[SynchronizedVideoRecorder] arCameraManager has no current configuration");
+                }
+                
+                bool canAcquireImage = arCameraManager.TryAcquireLatestCpuImage(out testImage);
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
+                if (canAcquireImage)
+                {
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager actual image size: {testImage.width}x{testImage.height}");
+                    width = testImage.width;
+                    height = testImage.height;
+                    usedActualImageSize = true;
+                    resolutionSource = "arCameraManager actual image";
+                    testImage.Dispose();
+                }
+            }
+            else if (!usedActualImageSize)
+            {
+                Debug.Log("[SynchronizedVideoRecorder] arCameraManager is null or already found source");
+            }
+            
+            // Fall back to configuration if no actual image available
+            if (!usedActualImageSize)
+            {
+                // Use camera configuration like the working VideoRecorder
+                if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
+                {
+                    var config = Globals.CameraManager.currentConfiguration.Value;
+                    width = (int)config.width;
+                    height = (int)config.height;
+                    resolutionSource = "Globals.CameraManager configuration";
+                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
+                }
+                else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+                {
+                    var config = arCameraManager.currentConfiguration.Value;
+                    width = (int)config.width;
+                    height = (int)config.height;
+                    resolutionSource = "arCameraManager configuration";
+                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from arCameraManager: {width}x{height}");
+                }
+                else
+                {
+                    // Only use custom resolution as absolute last resort
+                    width = customResolution.x;
+                    height = customResolution.y;
+                    resolutionSource = "Custom fallback";
+                    Debug.LogWarning($"[SynchronizedVideoRecorder] No camera data available, using custom resolution as fallback: {width}x{height}");
+                }
             }
             
             // Create texture for recording
@@ -225,7 +282,10 @@ namespace BodyTracking.Recording
                 "[SynchronizedVideoRecorder] Recording Texture (Actual Size)" : 
                 "[SynchronizedVideoRecorder] Recording Texture (Camera Config)";
             
-            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height} (Native camera resolution)");
+            Debug.Log($"[SynchronizedVideoRecorder] === FINAL RESOLUTION ===");
+            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height}");
+            Debug.Log($"[SynchronizedVideoRecorder] Resolution source: {resolutionSource}");
+            Debug.Log($"[SynchronizedVideoRecorder] Used actual image size: {usedActualImageSize}");
         }
 
         /// <summary>
@@ -319,17 +379,29 @@ namespace BodyTracking.Recording
             
             // Try to acquire the latest CPU image using Globals.CameraManager like the working old VideoRecorder
             bool imageAcquired = false;
+            string imageSource = "None";
+            
             if (Globals.CameraManager != null)
             {
                 imageAcquired = Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage);
+                imageSource = "Globals.CameraManager";
             }
             else if (arCameraManager != null)
             {
                 imageAcquired = arCameraManager.TryAcquireLatestCpuImage(out cpuImage);
+                imageSource = "arCameraManager";
             }
             
             if (!imageAcquired)
                 return;
+            
+            // Log first few frames for debugging
+            if (frameCount < 3)
+            {
+                Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Image source: {imageSource}");
+                Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera image: {cpuImage.width}x{cpuImage.height}");
+                Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Recording texture: {recordingTexture.width}x{recordingTexture.height}");
+            }
             
             try
             {
