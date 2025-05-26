@@ -185,6 +185,59 @@ namespace TENDOR.Services.Firebase
             }
         }
 
+        /// <summary>
+        /// Download boulder image for AR tracking
+        /// </summary>
+        public async Task<byte[]> DownloadBoulderImage(string boulderId)
+        {
+            try
+            {
+                Logger.Log($"Downloading boulder image: {boulderId}", "STORAGE");
+
+                // TODO: Implement Firebase Storage download for boulder images
+                // string storagePath = $"imageTargets/{boulderId}.jpg";
+                // var storageRef = FirebaseStorage.DefaultInstance.GetReference(storagePath);
+                // var downloadTask = storageRef.GetBytesAsync(long.MaxValue);
+                // return await downloadTask;
+
+                // Simulate download for now - create a placeholder texture and encode as PNG
+                await Task.Delay(500);
+                
+                // Create a simple 64x64 placeholder texture
+                var placeholderTexture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+                var pixels = new Color32[64 * 64];
+                
+                // Create a simple pattern for the placeholder
+                for (int y = 0; y < 64; y++)
+                {
+                    for (int x = 0; x < 64; x++)
+                    {
+                        int index = y * 64 + x;
+                        // Create a checkerboard pattern
+                        bool isWhite = ((x / 8) + (y / 8)) % 2 == 0;
+                        pixels[index] = isWhite ? Color.white : Color.gray;
+                    }
+                }
+                
+                placeholderTexture.SetPixels32(pixels);
+                placeholderTexture.Apply();
+                
+                // Encode as PNG
+                byte[] pngData = placeholderTexture.EncodeToPNG();
+                
+                // Clean up
+                UnityEngine.Object.DestroyImmediate(placeholderTexture);
+
+                Logger.Log($"Boulder image downloaded (placeholder): {boulderId}", "STORAGE");
+                return pngData;
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Boulder image download failed: {e.Message}", "STORAGE");
+                return null;
+            }
+        }
+
         #endregion
 
         #region Firestore

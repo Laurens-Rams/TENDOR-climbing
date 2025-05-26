@@ -14,7 +14,7 @@ namespace TENDOR.Tests
     public class CompilationTest : MonoBehaviour
     {
         [Header("Compilation Test")]
-        [SerializeField] private bool runTestOnStart = false;
+        [SerializeField] private bool runTestOnStart = true;
         
         private void Start()
         {
@@ -58,6 +58,12 @@ namespace TENDOR.Tests
             if (ARService.Instance != null)
             {
                 Logger.Log($"✅ ARService: Initialized = {ARService.Instance.IsInitialized}", "TEST");
+                
+                // Test AR Subsystems types are accessible
+                var cameraManager = ARService.Instance.GetCameraManager();
+                var trackedImageManager = ARService.Instance.GetTrackedImageManager();
+                Logger.Log($"✅ ARService: Camera Manager = {(cameraManager != null ? "Found" : "Not Found")}", "TEST");
+                Logger.Log($"✅ ARService: Tracked Image Manager = {(trackedImageManager != null ? "Found" : "Not Found")}", "TEST");
             }
             else
             {
