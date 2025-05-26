@@ -123,9 +123,18 @@ namespace BodyTracking.Animation
             targetHipPosition = worldPosition;
             hasValidTarget = true;
             
+            if (enableLogging)
+            {
+                Debug.Log($"[FBXCharacterController] Target hip position set to: {worldPosition:F3}");
+            }
+            
             if (isInitialized)
             {
                 UpdateCharacterPosition();
+            }
+            else
+            {
+                Debug.LogWarning("[FBXCharacterController] Character not initialized - cannot update position");
             }
         }
 
@@ -134,17 +143,31 @@ namespace BodyTracking.Animation
         /// </summary>
         private void UpdateCharacterPosition()
         {
-            if (!hasValidTarget || hipBone == null || characterRoot == null) return;
+            if (!hasValidTarget || hipBone == null || characterRoot == null) 
+            {
+                if (enableLogging)
+                {
+                    Debug.LogWarning($"[FBXCharacterController] Cannot update position - hasValidTarget: {hasValidTarget}, hipBone: {hipBone != null}, characterRoot: {characterRoot != null}");
+                }
+                return;
+            }
             
             // Calculate offset needed to move hip to target position
             Vector3 currentHipWorld = hipBone.position;
             Vector3 targetPosition = targetHipPosition;
             
-            // Remove height adjustment - use target position directly
+            // Calculate the offset needed
             Vector3 offset = targetPosition - currentHipWorld;
             
             // Move the entire character root
             characterRoot.transform.position += offset;
+            
+            // Ensure character is visible and active
+            if (!characterRoot.activeInHierarchy)
+            {
+                characterRoot.SetActive(true);
+                Debug.Log("[FBXCharacterController] Activated character for positioning");
+            }
             
             // Update debug visualization to show actual hip target
             if (debugSphere != null)
@@ -156,7 +179,10 @@ namespace BodyTracking.Animation
             // Notify listeners
             OnHipPositionUpdated?.Invoke(targetHipPosition);
             
-            // Removed frequent logging to reduce console spam
+            if (enableLogging)
+            {
+                Debug.Log($"[FBXCharacterController] Updated character position - Hip moved from {currentHipWorld:F3} to {hipBone.position:F3}");
+            }
         }
 
         /// <summary>
@@ -1176,11 +1202,15 @@ namespace BodyTracking.Animation
         }
 
         /// <summary>
-        /// Load default animation from the NewBody FBX
+        /// Load default animation from the NewAnimationOnly FBX
         /// </summary>
         private bool LoadDefaultAnimation()
         {
-            if (runtimeOverrideController == null) return false;
+            if (runtimeOverrideController == null) 
+            {
+                Debug.LogError("[FBXCharacterController] No runtime override controller available for animation loading");
+                return false;
+            }
             
             // Check if animation is already loaded
             var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
@@ -1197,33 +1227,46 @@ namespace BodyTracking.Animation
                 }
             }
             
-            // Auto-detect animation name if not specified
-            string animationToLoad = defaultAnimationClipName;
-            if (string.IsNullOrEmpty(animationToLoad))
+            // Always try to load from NewAnimationOnly.fbx first (this should be the primary source)
+            string animationToLoad = GetFirstAnimationFromNewAnimationFBX();
+            if (!string.IsNullOrEmpty(animationToLoad))
             {
-                animationToLoad = GetFirstAnimationFromNewAnimationFBX();
-                if (string.IsNullOrEmpty(animationToLoad))
+                if (LoadAnimationFromFBX("Assets/DeepMotion/NewAnimationOnly.fbx", animationToLoad))
                 {
-                    Debug.LogError("[FBXCharacterController] No animations found in NewAnimationOnly.fbx");
-                    return false;
+                    Debug.Log($"[FBXCharacterController] ✅ Loaded animation '{animationToLoad}' from NewAnimationOnly.fbx");
+                    return true;
                 }
-                if (enableLogging) Debug.Log($"[FBXCharacterController] Auto-detected animation: {animationToLoad}");
+            }
+            else
+            {
+                Debug.LogError("[FBXCharacterController] ❌ No animations found in NewAnimationOnly.fbx - check FBX import settings");
             }
             
-            // Try to load animation from NewAnimationOnly.fbx first, then fallback to NewBody.fbx
-            if (LoadAnimationFromFBX("Assets/DeepMotion/NewAnimationOnly.fbx", animationToLoad))
+            // Try known animation name "Take 001" directly
+            if (LoadAnimationFromFBX("Assets/DeepMotion/NewAnimationOnly.fbx", "Take 001"))
             {
-                if (enableLogging) Debug.Log($"[FBXCharacterController] Loaded animation '{animationToLoad}' from NewAnimationOnly.fbx");
+                Debug.Log($"[FBXCharacterController] ✅ Loaded animation 'Take 001' from NewAnimationOnly.fbx (direct fallback)");
                 return true;
             }
             
-            // Fallback to NewBody.fbx in case animation is embedded there
-            if (LoadAnimationFromFBX("Assets/DeepMotion/NewBody.fbx", animationToLoad))
+            // Fallback to default animation name if specified
+            if (!string.IsNullOrEmpty(defaultAnimationClipName))
             {
-                if (enableLogging) Debug.Log($"[FBXCharacterController] Loaded animation '{animationToLoad}' from NewBody.fbx");
-                return true;
+                if (LoadAnimationFromFBX("Assets/DeepMotion/NewAnimationOnly.fbx", defaultAnimationClipName))
+                {
+                    Debug.Log($"[FBXCharacterController] ✅ Loaded default animation '{defaultAnimationClipName}' from NewAnimationOnly.fbx");
+                    return true;
+                }
+                
+                // Try NewBody.fbx as last resort
+                if (LoadAnimationFromFBX("Assets/DeepMotion/NewBody.fbx", defaultAnimationClipName))
+                {
+                    Debug.Log($"[FBXCharacterController] ✅ Loaded animation '{defaultAnimationClipName}' from NewBody.fbx (fallback)");
+                    return true;
+                }
             }
             
+            Debug.LogError("[FBXCharacterController] ❌ Failed to load any animation - animation playback will not work");
             return false;
         }
 
@@ -1250,27 +1293,34 @@ namespace BodyTracking.Animation
         }
 
         /// <summary>
-        /// Get the first available animation clip name from NewAnimationOnly.fbx
+        /// Get the first animation clip name from NewAnimationOnly.fbx
         /// </summary>
         private string GetFirstAnimationFromNewAnimationFBX()
         {
-            #if UNITY_EDITOR
-            string animationFbxPath = "Assets/DeepMotion/NewAnimationOnly.fbx";
-            GameObject animationFbx = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(animationFbxPath);
-            if (animationFbx != null)
+            try
             {
-                Object[] assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(animationFbxPath);
-                foreach (Object asset in assets)
+                // Load all assets from the NewAnimationOnly.fbx file
+                UnityEngine.Object[] assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/DeepMotion/NewAnimationOnly.fbx");
+                
+                foreach (var asset in assets)
                 {
-                    if (asset is AnimationClip clip)
+                    if (asset is AnimationClip clip && !clip.name.Contains("__preview__"))
                     {
-                        if (enableLogging) Debug.Log($"[FBXCharacterController] Found animation clip: '{clip.name}' in NewAnimationOnly.fbx");
+                        if (enableLogging) Debug.Log($"[FBXCharacterController] Found animation clip: {clip.name}");
                         return clip.name;
                     }
                 }
+                
+                Debug.LogWarning("[FBXCharacterController] No animation clips found in NewAnimationOnly.fbx");
+                return null;
             }
-            #endif
-            return null;
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[FBXCharacterController] Error loading animations from NewAnimationOnly.fbx: {e.Message}");
+                
+                // Fallback to known animation name from FBX meta file
+                return "Take 001";
+            }
         }
 
         /// <summary>

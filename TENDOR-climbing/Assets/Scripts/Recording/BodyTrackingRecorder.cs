@@ -140,7 +140,11 @@ namespace BodyTracking.Recording
                 {
                     characterController.Initialize();
                 }
-               UnityEngine.Debug.Log("[BodyTrackingRecorder] Character controller integration enabled");
+                
+                // Make sure character is visible and positioned during recording
+                characterController.SetDebugVisualization(true);
+                
+               UnityEngine.Debug.Log("[BodyTrackingRecorder] Character controller integration enabled for recording");
             }
             else
             {

@@ -182,132 +182,66 @@ namespace BodyTracking.Recording
         }
 
         /// <summary>
-        /// Create recording texture based on AR camera configuration
+        /// Create recording texture with proper resolution
         /// </summary>
         private void CreateRecordingTexture()
         {
-            int width = customResolution.x; // Initialize with fallback values
-            int height = customResolution.y;
-            bool usedActualImageSize = false;
-            string resolutionSource = "Unknown";
+            int width = 1920;  // Default fallback
+            int height = 1080; // Default fallback
+            string resolutionSource = "Default fallback";
             
-            // Always try to use the camera's native resolution like the working VideoRecorder
-            // First try to get actual camera image size (most accurate)
-            XRCpuImage testImage;
+            // Priority 1: Try to get actual camera image size from current frame
+            XRCpuImage cpuImage;
+            bool gotCameraImage = false;
             
-            Debug.Log("[SynchronizedVideoRecorder] === CAMERA RESOLUTION DEBUG ===");
-            
-            // Check local arCameraManager first (since Globals.CameraManager appears broken)
-            if (arCameraManager != null)
+            if (arCameraManager != null && arCameraManager.TryAcquireLatestCpuImage(out cpuImage))
             {
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager available: {arCameraManager != null}");
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager name: {arCameraManager.name}");
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager enabled: {arCameraManager.enabled}");
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager gameObject active: {arCameraManager.gameObject.activeInHierarchy}");
-                
-                if (arCameraManager.currentConfiguration.HasValue)
-                {
-                    var config = arCameraManager.currentConfiguration.Value;
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config: {config.width}x{config.height}");
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config framerate: {config.framerate}");
-                }
-                else
-                {
-                    Debug.Log("[SynchronizedVideoRecorder] arCameraManager has no current configuration");
-                }
-                
-                bool canAcquireImage = arCameraManager.TryAcquireLatestCpuImage(out testImage);
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
-                if (canAcquireImage)
-                {
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager actual image size: {testImage.width}x{testImage.height}");
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image format: {testImage.format}");
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image timestamp: {testImage.timestamp}");
-                    
-                    // Always use the actual camera image size (like the working old VideoRecorder)
-                    width = testImage.width;
-                    height = testImage.height;
-                    usedActualImageSize = true;
-                    resolutionSource = "arCameraManager actual image";
-                    testImage.Dispose();
-                }
+                width = cpuImage.width;
+                height = cpuImage.height;
+                resolutionSource = "Actual camera image (arCameraManager)";
+                gotCameraImage = true;
+                cpuImage.Dispose();
             }
-            else
+            else if (Globals.CameraManager != null && Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage))
             {
-                Debug.Log("[SynchronizedVideoRecorder] arCameraManager is null");
+                width = cpuImage.width;
+                height = cpuImage.height;
+                resolutionSource = "Actual camera image (Globals.CameraManager)";
+                gotCameraImage = true;
+                cpuImage.Dispose();
             }
             
-            // Check Globals.CameraManager as fallback
-            if (!usedActualImageSize && Globals.CameraManager != null)
+            // Priority 2: Try camera configuration if no actual image available
+            if (!gotCameraImage)
             {
-                Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager available: {Globals.CameraManager != null}");
-                if (Globals.CameraManager.currentConfiguration.HasValue)
-                {
-                    var config = Globals.CameraManager.currentConfiguration.Value;
-                    Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager config: {config.width}x{config.height}");
-                }
-                else
-                {
-                    Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager has no current configuration");
-                }
-                
-                bool canAcquireImage = Globals.CameraManager.TryAcquireLatestCpuImage(out testImage);
-                Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
-                if (canAcquireImage)
-                {
-                    Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager actual image size: {testImage.width}x{testImage.height}");
-                    width = testImage.width;
-                    height = testImage.height;
-                    usedActualImageSize = true;
-                    resolutionSource = "Globals.CameraManager actual image";
-                    testImage.Dispose();
-                }
-            }
-            else if (!usedActualImageSize)
-            {
-                Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager is null or already found source");
-            }
-            
-            // Fall back to configuration if no actual image available
-            if (!usedActualImageSize)
-            {
-                // Use camera configuration - prioritize local arCameraManager
                 if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
                 {
                     var config = arCameraManager.currentConfiguration.Value;
-                    width = (int)config.width;
-                    height = (int)config.height;
-                    resolutionSource = "arCameraManager configuration";
-                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from arCameraManager: {width}x{height}");
+                    width = config.resolution.x;
+                    height = config.resolution.y;
+                    resolutionSource = "AR camera configuration (arCameraManager)";
                 }
                 else if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
                 {
                     var config = Globals.CameraManager.currentConfiguration.Value;
-                    width = (int)config.width;
-                    height = (int)config.height;
-                    resolutionSource = "Globals.CameraManager configuration";
-                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
-                }
-                else
-                {
-                    // Only use custom resolution as absolute last resort
-                    width = customResolution.x;
-                    height = customResolution.y;
-                    resolutionSource = "Custom fallback";
-                    Debug.LogWarning($"[SynchronizedVideoRecorder] No camera data available, using custom resolution as fallback: {width}x{height}");
+                    width = config.resolution.x;
+                    height = config.resolution.y;
+                    resolutionSource = "AR camera configuration (Globals.CameraManager)";
                 }
             }
             
-            // Create texture for recording
-            recordingTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            recordingTexture.name = usedActualImageSize ? 
-                "[SynchronizedVideoRecorder] Recording Texture (Actual Size)" : 
-                "[SynchronizedVideoRecorder] Recording Texture (Camera Config)";
+            // Always use the actual camera dimensions - no forced orientation conversion
+            // This should fix the 1920x1440 vs 1080x1920 issue
             
-            Debug.Log($"[SynchronizedVideoRecorder] === FINAL RESOLUTION ===");
-            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height}");
-            Debug.Log($"[SynchronizedVideoRecorder] Resolution source: {resolutionSource}");
-            Debug.Log($"[SynchronizedVideoRecorder] Used actual image size: {usedActualImageSize}");
+            Debug.Log($"[SynchronizedVideoRecorder] Creating recording texture: {width}x{height} (Source: {resolutionSource})");
+            Debug.Log($"[SynchronizedVideoRecorder] Screen orientation: {Screen.orientation}");
+            Debug.Log($"[SynchronizedVideoRecorder] Screen size: {Screen.width}x{Screen.height}");
+            
+            // Create texture with actual camera dimensions
+            recordingTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            recordingTexture.name = "[SynchronizedVideoRecorder] Recording Texture";
+            
+            Debug.Log($"[SynchronizedVideoRecorder] ✅ Created recording texture: {recordingTexture.width}x{recordingTexture.height}");
         }
 
         /// <summary>
@@ -399,23 +333,24 @@ namespace BodyTracking.Recording
         {
             if (!isRecording || recordingTexture == null) return;
             
-            // Try to acquire the latest CPU image - prioritize local arCameraManager
-            bool imageAcquired = false;
-            string imageSource = "None";
+            string imageSource = "Unknown";
+            XRCpuImage cpuImage;
             
-            if (arCameraManager != null)
+            // Try to get image from arCameraManager first (prioritized)
+            if (arCameraManager != null && arCameraManager.TryAcquireLatestCpuImage(out cpuImage))
             {
-                imageAcquired = arCameraManager.TryAcquireLatestCpuImage(out cpuImage);
                 imageSource = "arCameraManager";
             }
-            else if (Globals.CameraManager != null)
+            // Fallback to Globals.CameraManager if available
+            else if (Globals.CameraManager != null && Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage))
             {
-                imageAcquired = Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage);
                 imageSource = "Globals.CameraManager";
             }
-            
-            if (!imageAcquired)
+            else
+            {
+                Debug.LogWarning("[SynchronizedVideoRecorder] No camera image available from any source");
                 return;
+            }
             
             // Log first few frames for debugging
             if (frameCount < 3)
@@ -423,6 +358,8 @@ namespace BodyTracking.Recording
                 Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Image source: {imageSource}");
                 Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera image: {cpuImage.width}x{cpuImage.height}");
                 Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Recording texture: {recordingTexture.width}x{recordingTexture.height}");
+                Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Screen orientation: {Screen.orientation}");
+                Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Screen size: {Screen.width}x{Screen.height}");
             }
             
             try
@@ -443,14 +380,55 @@ namespace BodyTracking.Recording
                     Debug.Log($"[SynchronizedVideoRecorder] Recreated texture with camera size: {cpuImage.width}x{cpuImage.height}");
                 }
                 
-                // Convert the image to the texture format with proper orientation for portrait recording
-                // Use MirrorY + rotation to get correct portrait orientation
-                var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, XRCpuImage.Transformation.MirrorY);
+                // Determine proper transformation based on device orientation and platform
+                XRCpuImage.Transformation transformation = XRCpuImage.Transformation.MirrorY;
+                
+                // For iOS in landscape mode, we need to rotate the image properly
+                #if UNITY_IOS && !UNITY_EDITOR
+                if (Screen.orientation == ScreenOrientation.LandscapeLeft)
+                {
+                    // For landscape left, we need to rotate 90 degrees counter-clockwise
+                    transformation = XRCpuImage.Transformation.MirrorY;
+                    
+                    // Set orientation metadata for AVPro to handle rotation in video file
+                    if (videoCapture != null)
+                    {
+                        var hints = videoCapture.GetEncoderHints();
+                        hints.videoHints.orientationMetadata = RenderHeads.Media.AVProMovieCapture.OrientationMetadata.Rotate270; // 90° left rotation
+                        Debug.Log($"[SynchronizedVideoRecorder] Set orientation metadata to Rotate270 for LandscapeLeft");
+                    }
+                }
+                else if (Screen.orientation == ScreenOrientation.LandscapeRight)
+                {
+                    transformation = XRCpuImage.Transformation.MirrorY;
+                    
+                    if (videoCapture != null)
+                    {
+                        var hints = videoCapture.GetEncoderHints();
+                        hints.videoHints.orientationMetadata = RenderHeads.Media.AVProMovieCapture.OrientationMetadata.Rotate90; // 90° right rotation
+                        Debug.Log($"[SynchronizedVideoRecorder] Set orientation metadata to Rotate90 for LandscapeRight");
+                    }
+                }
+                else
+                {
+                    // Portrait modes
+                    transformation = XRCpuImage.Transformation.MirrorY;
+                    
+                    if (videoCapture != null)
+                    {
+                        var hints = videoCapture.GetEncoderHints();
+                        hints.videoHints.orientationMetadata = RenderHeads.Media.AVProMovieCapture.OrientationMetadata.None;
+                        Debug.Log($"[SynchronizedVideoRecorder] Set orientation metadata to None for Portrait");
+                    }
+                }
+                #endif
+                
+                var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, transformation);
                 
                 // Log transformation details for first few frames
                 if (frameCount < 3)
                 {
-                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Using transformation: MirrorY");
+                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Using transformation: {transformation}");
                     Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera orientation: {Screen.orientation}");
                     Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera image: {cpuImage.width}x{cpuImage.height}");
                     Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Target texture: {recordingTexture.width}x{recordingTexture.height}");
