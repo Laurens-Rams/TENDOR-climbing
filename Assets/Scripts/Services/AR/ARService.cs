@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using TENDOR.Core;
 using TENDOR.Runtime.Models;
 using TENDOR.Services.Firebase;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Services.AR
 {
@@ -247,10 +248,11 @@ namespace TENDOR.Services.AR
                 // Create runtime library if needed
                 if (runtimeImageLibrary == null)
                 {
-                    runtimeImageLibrary = arTrackedImageManager.CreateRuntimeLibrary();
+                    var library = arTrackedImageManager.CreateRuntimeLibrary();
+                    runtimeImageLibrary = library as MutableRuntimeReferenceImageLibrary;
                     if (runtimeImageLibrary == null)
                     {
-                        Logger.LogError("Failed to create runtime image library", "AR");
+                        Logger.LogError("Failed to create mutable runtime image library", "AR");
                         return;
                     }
                 }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using TENDOR.Core;
 using TENDOR.Runtime.Models;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Services.Firebase
 {

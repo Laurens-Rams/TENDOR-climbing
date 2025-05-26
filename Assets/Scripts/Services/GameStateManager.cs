@@ -4,6 +4,7 @@ using TENDOR.Core;
 using TENDOR.Runtime.Models;
 using TENDOR.Services.Firebase;
 using TENDOR.Services.AR;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Services
 {

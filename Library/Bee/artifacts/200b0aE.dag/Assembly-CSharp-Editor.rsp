@@ -451,21 +451,8 @@
 -analyzer:"/Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll"
 -analyzer:"/Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
 -analyzer:"/Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll"
-"Assets/Scripts/Editor/ARRemoteTester.cs"
-"Assets/Scripts/Editor/ARSceneFixer.cs"
-"Assets/Scripts/Editor/AVProValidation.cs"
-"Assets/Scripts/Editor/CompilationFixTest.cs"
-"Assets/Scripts/Editor/CompilationTest.cs"
 "Assets/Scripts/Editor/iOSBuildHelper.cs"
-"Assets/Scripts/Editor/iOSPostProcessor.cs"
-"Assets/Scripts/Editor/MaterialCreator.cs"
-"Assets/Scripts/Editor/MaterialTextureHelper.cs"
 "Assets/Scripts/Editor/MVPSceneSetup.cs"
-"Assets/Scripts/Editor/SceneFixer.cs"
-"Assets/Scripts/Editor/SceneValidationTool.cs"
-"Assets/Scripts/Editor/SimpleVideoSetup.cs"
-"Assets/Scripts/Editor/SystemValidator.cs"
-"Assets/Scripts/Editor/TextureImporter.cs"
 -langversion:9.0
 
 /deterministic

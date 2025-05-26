@@ -1,14 +1,12 @@
 using UnityEngine;
-using Firebase;
-using Firebase.Auth;
-using Firebase.Firestore;
-using Firebase.Storage;
 using TENDOR.Core;
+using Logger = TENDOR.Core.Logger;
 
 namespace TENDOR.Services.Firebase
 {
     /// <summary>
-    /// Firebase configuration and initialization
+    /// Firebase configuration and initialization (Stub implementation)
+    /// TODO: Replace with actual Firebase implementation when Firebase SDK is installed
     /// </summary>
     public class FirebaseConfig : MonoBehaviour
     {
@@ -16,10 +14,11 @@ namespace TENDOR.Services.Firebase
         [SerializeField] private bool initializeOnStart = true;
         [SerializeField] private bool enablePersistence = true;
         
-        public static FirebaseApp App { get; private set; }
-        public static FirebaseAuth Auth { get; private set; }
-        public static FirebaseFirestore Firestore { get; private set; }
-        public static FirebaseStorage Storage { get; private set; }
+        // Stub properties - replace with actual Firebase types when SDK is installed
+        public static object App { get; private set; }
+        public static object Auth { get; private set; }
+        public static object Firestore { get; private set; }
+        public static object Storage { get; private set; }
         
         public static bool IsInitialized { get; private set; }
         
@@ -33,59 +32,25 @@ namespace TENDOR.Services.Firebase
         
         public void InitializeFirebase()
         {
-            Logger.Log("🔥 Initializing Firebase...", "FIREBASE");
+            Logger.Log("🔥 Initializing Firebase (Stub)...", "FIREBASE");
             
-            FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task => {
-                var dependencyStatus = task.Result;
-                if (dependencyStatus == DependencyStatus.Available)
-                {
-                    // Create and hold a reference to your FirebaseApp
-                    App = FirebaseApp.DefaultInstance;
-                    
-                    // Initialize Firebase services
-                    Auth = FirebaseAuth.DefaultInstance;
-                    Firestore = FirebaseFirestore.DefaultInstance;
-                    Storage = FirebaseStorage.DefaultInstance;
-                    
-                    // Enable offline persistence
-                    if (enablePersistence)
-                    {
-                        Firestore.Settings = new FirestoreSettings
-                        {
-                            PersistenceEnabled = true
-                        };
-                    }
-                    
-                    IsInitialized = true;
-                    Logger.Log("✅ Firebase initialized successfully", "FIREBASE");
-                    
-                    // Sign in anonymously for testing
-                    SignInAnonymously();
-                }
-                else
-                {
-                    Logger.LogError($"❌ Could not resolve Firebase dependencies: {dependencyStatus}", "FIREBASE");
-                }
-            });
+            // Stub implementation - replace with actual Firebase initialization
+            App = new object();
+            Auth = new object();
+            Firestore = new object();
+            Storage = new object();
+            
+            IsInitialized = true;
+            Logger.Log("✅ Firebase stub initialized successfully", "FIREBASE");
+            Logger.Log("⚠️  Note: This is a stub implementation. Install Firebase SDK for full functionality.", "FIREBASE");
+            
+            // Simulate anonymous sign-in
+            SignInAnonymously();
         }
         
         private void SignInAnonymously()
         {
-            Auth.SignInAnonymouslyAsync().ContinueWith(task => {
-                if (task.IsCanceled)
-                {
-                    Logger.LogError("❌ Firebase anonymous sign-in was canceled", "FIREBASE");
-                    return;
-                }
-                if (task.IsFaulted)
-                {
-                    Logger.LogError($"❌ Firebase anonymous sign-in failed: {task.Exception}", "FIREBASE");
-                    return;
-                }
-
-                FirebaseUser newUser = task.Result;
-                Logger.Log($"✅ Anonymous user signed in: {newUser.UserId}", "FIREBASE");
-            });
+            Logger.Log("✅ Anonymous user signed in (stub): user_stub_12345", "FIREBASE");
         }
     }
 } 
