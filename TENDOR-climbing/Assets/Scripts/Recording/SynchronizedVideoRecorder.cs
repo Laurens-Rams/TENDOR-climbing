@@ -28,7 +28,7 @@ namespace BodyTracking.Recording
         
         [Header("AR Camera Settings")]
         [SerializeField] private bool useARCameraResolution = true;
-        [SerializeField] private Vector2Int customResolution = new Vector2Int(1920, 1080);
+        [SerializeField] private Vector2Int customResolution = new Vector2Int(1080, 1920);
         
         [Header("Synchronization")]
         [SerializeField] private BodyTrackingRecorder hipRecorder;
