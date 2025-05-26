@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using TENDOR.Core;
 using TENDOR.Services;
 using TENDOR.Services.Firebase;
@@ -87,6 +89,10 @@ namespace TENDOR.Tests
                 isActive = true
             };
             Logger.Log($"✅ BoulderData model: Name = {testBoulder.name}, Grade = {testBoulder.grade}", "TEST");
+            
+            // Test AR Subsystems types are accessible
+            var trackingState = TrackingState.Tracking;
+            Logger.Log($"✅ AR Subsystems: TrackingState.Tracking = {trackingState}", "TEST");
             
             Logger.Log("🎉 Compilation test completed successfully!", "TEST");
         }
