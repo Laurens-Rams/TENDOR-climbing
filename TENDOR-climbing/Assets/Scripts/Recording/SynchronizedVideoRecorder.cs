@@ -27,7 +27,7 @@ namespace BodyTracking.Recording
         [SerializeField] private bool useH264Codec = true;
         
         [Header("AR Camera Settings")]
-        [SerializeField] private bool useARCameraResolution = true;
+        [SerializeField] private bool useARCameraResolution = false;
         [SerializeField] private Vector2Int customResolution = new Vector2Int(1080, 1920);
         
         [Header("Synchronization")]

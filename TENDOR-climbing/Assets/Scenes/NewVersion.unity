@@ -4870,7 +4870,7 @@ MonoBehaviour:
   videoOutputFolder: TENDOR_Recordings
   videoFrameRate: 30
   useH264Codec: 1
-  useARCameraResolution: 1
+  useARCameraResolution: 0
   customResolution: {x: 1080, y: 1920}
   hipRecorder: {fileID: 0}
   autoFindHipRecorder: 1
