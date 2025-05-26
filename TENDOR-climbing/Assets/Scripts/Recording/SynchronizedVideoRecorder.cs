@@ -3,6 +3,8 @@ using RenderHeads.Media.AVProMovieCapture;
 using BodyTracking.Data;
 using BodyTracking.Recording;
 using BodyTracking.Storage;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,23 +14,21 @@ namespace BodyTracking.Recording
     /// <summary>
     /// Synchronized video and hip tracking recorder using AVPro Movie Capture
     /// Records video at 30fps with matching timestamps to hip tracking data
+    /// Uses texture-based recording compatible with AR Foundation
     /// </summary>
-    [RequireComponent(typeof(CaptureFromCamera))]
+    [RequireComponent(typeof(CaptureFromTexture))]
     public class SynchronizedVideoRecorder : MonoBehaviour
     {
         [Header("Video Recording Settings")]
-        [SerializeField] private Camera recordingCamera;
-        [SerializeField] private bool autoFindCamera = true;
+        [SerializeField] private ARCameraManager arCameraManager;
+        [SerializeField] private bool autoFindARCamera = true;
         [SerializeField] private string videoOutputFolder = "TENDOR_Recordings";
-        [SerializeField] private CaptureBase.Resolution videoResolution = CaptureBase.Resolution.POW2_2048x4096;
         [SerializeField] private float videoFrameRate = 30f;
         [SerializeField] private bool useH264Codec = true;
         
-        [Header("UI Exclusion Settings")]
-        [SerializeField] private bool excludeUIFromRecording = true;
-        [SerializeField] private LayerMask uiLayersToExclude = 1 << 5; // Default: exclude UI layer (layer 5)
-        [SerializeField] private bool createDedicatedRecordingCamera = false;
-        [SerializeField] private string recordingCameraName = "VideoRecordingCamera";
+        [Header("AR Camera Settings")]
+        [SerializeField] private bool useARCameraResolution = true;
+        [SerializeField] private Vector2Int customResolution = new Vector2Int(1920, 1080);
         
         [Header("Synchronization")]
         [SerializeField] private BodyTrackingRecorder hipRecorder;
@@ -44,18 +44,16 @@ namespace BodyTracking.Recording
         [SerializeField] private RecordingStorage.StorageFormat storageFormat = RecordingStorage.StorageFormat.JSON;
         
         // Components
-        private CaptureFromCamera videoCapture;
-        private Camera dedicatedRecordingCamera;
+        private CaptureFromTexture videoCapture;
+        private Texture2D recordingTexture;
+        private XRCpuImage cpuImage;
         
         // Recording state
         private bool isRecording = false;
         private string currentSessionId;
         private string currentVideoPath;
         private DateTime recordingStartTime;
-        
-        // UI exclusion state
-        private int originalCullingMask = -1;
-        private bool cullingMaskModified = false;
+        private int frameCount = 0;
         
         // Events
         public event System.Action<string> OnVideoRecordingStarted;
@@ -66,14 +64,15 @@ namespace BodyTracking.Recording
         public bool IsRecording => isRecording;
         public string CurrentVideoPath => currentVideoPath;
         public string OutputFolder => GetOutputFolderPath();
+        public int FrameCount => frameCount;
 
         void Awake()
         {
             // Get or add AVPro capture component
-            videoCapture = GetComponent<CaptureFromCamera>();
+            videoCapture = GetComponent<CaptureFromTexture>();
             if (videoCapture == null)
             {
-                videoCapture = gameObject.AddComponent<CaptureFromCamera>();
+                videoCapture = gameObject.AddComponent<CaptureFromTexture>();
             }
         }
 
@@ -88,20 +87,18 @@ namespace BodyTracking.Recording
         /// </summary>
         private void InitializeComponents()
         {
-            // Find recording camera
-            if (recordingCamera == null && autoFindCamera)
+            // Find AR camera manager
+            if (arCameraManager == null && autoFindARCamera)
             {
-                recordingCamera = Camera.main;
-                if (recordingCamera == null)
+                arCameraManager = FindFirstObjectByType<ARCameraManager>();
+                if (arCameraManager == null)
                 {
-                    recordingCamera = FindFirstObjectByType<Camera>();
+                    // Try to get from Globals if available
+                    if (Globals.CameraManager != null)
+                    {
+                        arCameraManager = Globals.CameraManager;
+                    }
                 }
-            }
-            
-            // Create dedicated recording camera if requested
-            if (createDedicatedRecordingCamera && excludeUIFromRecording)
-            {
-                SetupDedicatedRecordingCamera();
             }
             
             // Find hip recorder
@@ -110,9 +107,9 @@ namespace BodyTracking.Recording
                 hipRecorder = FindFirstObjectByType<BodyTrackingRecorder>();
             }
             
-            if (recordingCamera == null && dedicatedRecordingCamera == null)
+            if (arCameraManager == null)
             {
-                Debug.LogError("[SynchronizedVideoRecorder] No recording camera found!");
+                Debug.LogError("[SynchronizedVideoRecorder] No AR Camera Manager found!");
                 return;
             }
             
@@ -122,111 +119,20 @@ namespace BodyTracking.Recording
                 return;
             }
             
-            Camera activeRecordingCamera = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            Debug.Log($"[SynchronizedVideoRecorder] Initialized with camera: {activeRecordingCamera.name}");
-            Debug.Log($"[SynchronizedVideoRecorder] UI exclusion: {excludeUIFromRecording}");
+            Debug.Log($"[SynchronizedVideoRecorder] Initialized with AR Camera Manager: {arCameraManager.name}");
         }
 
         /// <summary>
-        /// Setup dedicated recording camera that excludes UI elements
-        /// </summary>
-        private void SetupDedicatedRecordingCamera()
-        {
-            // Find or create dedicated recording camera
-            GameObject existingCameraObj = GameObject.Find(recordingCameraName);
-            if (existingCameraObj != null)
-            {
-                dedicatedRecordingCamera = existingCameraObj.GetComponent<Camera>();
-            }
-            
-            if (dedicatedRecordingCamera == null)
-            {
-                // Create new camera object
-                GameObject cameraObj = new GameObject(recordingCameraName);
-                dedicatedRecordingCamera = cameraObj.AddComponent<Camera>();
-                
-                // Copy settings from main camera
-                if (recordingCamera != null)
-                {
-                    CopyCameraSettings(recordingCamera, dedicatedRecordingCamera);
-                }
-                else
-                {
-                    // Use default AR camera settings
-                    dedicatedRecordingCamera.clearFlags = CameraClearFlags.SolidColor;
-                    dedicatedRecordingCamera.backgroundColor = Color.black;
-                    dedicatedRecordingCamera.fieldOfView = 60f;
-                    dedicatedRecordingCamera.nearClipPlane = 0.1f;
-                    dedicatedRecordingCamera.farClipPlane = 1000f;
-                }
-                
-                Debug.Log($"[SynchronizedVideoRecorder] Created dedicated recording camera: {recordingCameraName}");
-            }
-            
-            // Configure UI exclusion
-            if (excludeUIFromRecording)
-            {
-                // Simple solution: Just exclude the UI layer (layer 5)
-                originalCullingMask = dedicatedRecordingCamera.cullingMask;
-                dedicatedRecordingCamera.cullingMask = originalCullingMask & ~(1 << 5);
-                
-                Debug.Log($"[SynchronizedVideoRecorder] UI exclusion configured - Original mask: {originalCullingMask}, New mask: {dedicatedRecordingCamera.cullingMask}");
-                Debug.Log($"[SynchronizedVideoRecorder] UI layer (5) excluded from dedicated camera");
-            }
-            
-            // Disable the camera by default (AVPro will control rendering)
-            dedicatedRecordingCamera.enabled = false;
-        }
-
-        /// <summary>
-        /// Copy camera settings from source to target camera
-        /// </summary>
-        private void CopyCameraSettings(Camera source, Camera target)
-        {
-            target.clearFlags = source.clearFlags;
-            target.backgroundColor = source.backgroundColor;
-            target.cullingMask = source.cullingMask;
-            target.orthographic = source.orthographic;
-            target.fieldOfView = source.fieldOfView;
-            target.orthographicSize = source.orthographicSize;
-            target.nearClipPlane = source.nearClipPlane;
-            target.farClipPlane = source.farClipPlane;
-            target.rect = source.rect;
-            target.depth = source.depth;
-            target.renderingPath = source.renderingPath;
-            target.useOcclusionCulling = source.useOcclusionCulling;
-            target.allowHDR = source.allowHDR;
-            target.allowMSAA = source.allowMSAA;
-            
-            // Copy transform
-            target.transform.position = source.transform.position;
-            target.transform.rotation = source.transform.rotation;
-            target.transform.localScale = source.transform.localScale;
-        }
-
-        /// <summary>
-        /// Setup AVPro video capture settings
+        /// Setup AVPro video capture settings for texture-based recording
         /// </summary>
         private void SetupVideoCapture()
         {
             if (videoCapture == null) return;
             
-            // Determine which camera to use for recording
-            Camera cameraToUse = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            
-            // Configure UI exclusion for existing camera if not using dedicated camera
-            if (dedicatedRecordingCamera == null && excludeUIFromRecording && recordingCamera != null)
-            {
-                // Temporarily modify the main camera's culling mask during recording
-                // Note: This will be restored when recording stops
-                Debug.Log($"[SynchronizedVideoRecorder] Will exclude UI layers from main camera during recording");
-            }
-            
             // Basic settings
-            videoCapture.SetCamera(cameraToUse, false);
             videoCapture.FrameRate = videoFrameRate;
             videoCapture.IsRealTime = true;
-            videoCapture.CameraRenderResolution = videoResolution;
+            videoCapture.IsManualUpdate = true; // We'll manually update frames
             
             // Audio settings
             if (recordAudio)
@@ -238,7 +144,7 @@ namespace BodyTracking.Recording
                 videoCapture.AudioCaptureSource = AudioCaptureSource.None;
             }
             
-            // Quality settings for AR Remote compatibility
+            // Quality settings for AR compatibility
             videoCapture.AllowOfflineVSyncDisable = true;
             
             // Output settings
@@ -248,134 +154,33 @@ namespace BodyTracking.Recording
             videoCapture.OnCaptureStart.AddListener(OnVideoCaptureStarted);
             videoCapture.CompletedFileWritingAction += OnVideoCaptureCompleted;
             
-            Debug.Log($"[SynchronizedVideoRecorder] Video capture configured: {videoFrameRate}fps, {videoResolution}");
-            Debug.Log($"[SynchronizedVideoRecorder] Recording camera: {cameraToUse.name}");
+            Debug.Log($"[SynchronizedVideoRecorder] Video capture configured: {videoFrameRate}fps, Texture-based recording");
         }
 
         /// <summary>
-        /// Apply UI exclusion settings before recording
+        /// Create recording texture based on AR camera configuration
         /// </summary>
-        private void ApplyUIExclusion()
+        private void CreateRecordingTexture()
         {
-            if (!excludeUIFromRecording) return;
+            int width, height;
             
-            Camera cameraToModify = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            
-            if (cameraToModify != null && !cullingMaskModified)
+            if (useARCameraResolution && arCameraManager.currentConfiguration.HasValue)
             {
-                originalCullingMask = cameraToModify.cullingMask;
-                
-                // Simple solution: Just exclude the UI layer (layer 5)
-                cameraToModify.cullingMask = originalCullingMask & ~(1 << 5);
-                cullingMaskModified = true;
-                
-                Debug.Log($"[SynchronizedVideoRecorder] Applied UI exclusion - Original mask: {originalCullingMask}, New mask: {cameraToModify.cullingMask}");
-                Debug.Log($"[SynchronizedVideoRecorder] UI layer (5) excluded from recording");
+                var config = arCameraManager.currentConfiguration.Value;
+                width = (int)config.width;
+                height = (int)config.height;
             }
-        }
-
-        /// <summary>
-        /// Restore original camera settings after recording
-        /// </summary>
-        private void RestoreUISettings()
-        {
-            if (!cullingMaskModified) return;
-            
-            Camera cameraToRestore = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            
-            if (cameraToRestore != null && originalCullingMask != -1)
+            else
             {
-                cameraToRestore.cullingMask = originalCullingMask;
-                cullingMaskModified = false;
-                
-                Debug.Log($"[SynchronizedVideoRecorder] Restored original culling mask: {originalCullingMask}");
-            }
-        }
-
-        /// <summary>
-        /// Get configuration summary for debugging
-        /// </summary>
-        public string GetUIExclusionSummary()
-        {
-            var summary = $"UI Exclusion: {excludeUIFromRecording}\n";
-            summary += $"Dedicated Camera: {(dedicatedRecordingCamera != null ? dedicatedRecordingCamera.name : "None")}\n";
-            summary += $"UI Layers to Exclude: {uiLayersToExclude}\n";
-            
-            Camera activeCamera = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            if (activeCamera != null)
-            {
-                summary += $"Active Camera: {activeCamera.name}\n";
-                summary += $"Current Culling Mask: {activeCamera.cullingMask}\n";
+                width = customResolution.x;
+                height = customResolution.y;
             }
             
-            return summary;
-        }
-
-        /// <summary>
-        /// Configure UI exclusion settings at runtime
-        /// </summary>
-        public void SetUIExclusionSettings(bool excludeUI, LayerMask layersToExclude = default)
-        {
-            excludeUIFromRecording = excludeUI;
-            if (layersToExclude != default)
-            {
-                uiLayersToExclude = layersToExclude;
-            }
+            // Create texture for recording
+            recordingTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            recordingTexture.name = "[SynchronizedVideoRecorder] Recording Texture";
             
-            Debug.Log($"[SynchronizedVideoRecorder] UI exclusion updated: {excludeUI}, Layers: {uiLayersToExclude}");
-        }
-
-        /// <summary>
-        /// Enable/disable dedicated recording camera at runtime
-        /// </summary>
-        public void SetDedicatedCameraMode(bool useDedicatedCamera)
-        {
-            if (isRecording)
-            {
-                Debug.LogWarning("[SynchronizedVideoRecorder] Cannot change camera mode during recording");
-                return;
-            }
-            
-            createDedicatedRecordingCamera = useDedicatedCamera;
-            
-            if (useDedicatedCamera && excludeUIFromRecording)
-            {
-                SetupDedicatedRecordingCamera();
-                SetupVideoCapture(); // Reconfigure with new camera
-            }
-            
-            Debug.Log($"[SynchronizedVideoRecorder] Dedicated camera mode: {useDedicatedCamera}");
-        }
-
-        /// <summary>
-        /// Immediately exclude UI from the current camera (for testing)
-        /// </summary>
-        [ContextMenu("Test: Exclude UI Now")]
-        public void TestExcludeUINow()
-        {
-            Camera testCamera = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            if (testCamera != null)
-            {
-                int originalMask = testCamera.cullingMask;
-                testCamera.cullingMask = originalMask & ~(1 << 5); // Exclude UI layer
-                Debug.Log($"[SynchronizedVideoRecorder] TEST: UI excluded from {testCamera.name}");
-                Debug.Log($"[SynchronizedVideoRecorder] TEST: Original mask: {originalMask}, New mask: {testCamera.cullingMask}");
-            }
-        }
-
-        /// <summary>
-        /// Restore UI to the current camera (for testing)
-        /// </summary>
-        [ContextMenu("Test: Restore UI Now")]
-        public void TestRestoreUINow()
-        {
-            Camera testCamera = dedicatedRecordingCamera != null ? dedicatedRecordingCamera : recordingCamera;
-            if (testCamera != null)
-            {
-                testCamera.cullingMask = testCamera.cullingMask | (1 << 5); // Include UI layer
-                Debug.Log($"[SynchronizedVideoRecorder] TEST: UI restored to {testCamera.name}");
-                Debug.Log($"[SynchronizedVideoRecorder] TEST: New mask: {testCamera.cullingMask}");
-            }
+            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height}");
         }
 
         /// <summary>
@@ -389,7 +194,7 @@ namespace BodyTracking.Recording
                 return false;
             }
             
-            if (videoCapture == null || hipRecorder == null)
+            if (videoCapture == null || hipRecorder == null || arCameraManager == null)
             {
                 Debug.LogError("[SynchronizedVideoRecorder] Missing required components");
                 return false;
@@ -398,7 +203,7 @@ namespace BodyTracking.Recording
             // Generate session ID
             currentSessionId = GenerateSessionId();
             
-            // Ensure output directory exists (AVPro will handle the actual path)
+            // Ensure output directory exists
             string outputDir = GetOutputFolderPath();
             if (!Directory.Exists(outputDir))
             {
@@ -406,17 +211,21 @@ namespace BodyTracking.Recording
                 Debug.Log($"[SynchronizedVideoRecorder] Created output directory: {outputDir}");
             }
             
-            // Setup video file path - AVPro will generate the actual filename
+            // Create recording texture
+            CreateRecordingTexture();
+            
+            // Setup video file path
             videoCapture.AppendFilenameTimestamp = true;
             videoCapture.FilenamePrefix = filePrefix;
             videoCapture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
             videoCapture.OutputFolderPath = videoOutputFolder;
             videoCapture.FilenameExtension = ".mp4";
             
-            recordingStartTime = DateTime.Now;
+            // Set the source texture
+            videoCapture.SetSourceTexture(recordingTexture);
             
-            // Apply UI exclusion settings
-            ApplyUIExclusion();
+            recordingStartTime = DateTime.Now;
+            frameCount = 0;
             
             // Start hip recording first
             if (!hipRecorder.StartRecording())
@@ -433,15 +242,53 @@ namespace BodyTracking.Recording
                 return false;
             }
             
+            // Subscribe to AR camera frame events
+            arCameraManager.frameReceived += OnARCameraFrameReceived;
+            
             isRecording = true;
             
-            // The actual video path will be available after recording starts
-            currentVideoPath = ""; // Will be updated when recording completes
-            
             Debug.Log($"[SynchronizedVideoRecorder] Started synchronized recording: {currentSessionId}");
-            OnVideoRecordingStarted?.Invoke(currentSessionId); // Pass session ID instead of path
+            OnVideoRecordingStarted?.Invoke(currentSessionId);
             
             return true;
+        }
+
+        /// <summary>
+        /// Handle AR camera frame received event
+        /// </summary>
+        private void OnARCameraFrameReceived(ARCameraFrameEventArgs args)
+        {
+            if (!isRecording || recordingTexture == null) return;
+            
+            // Try to acquire the latest CPU image
+            if (!arCameraManager.TryAcquireLatestCpuImage(out cpuImage))
+                return;
+            
+            try
+            {
+                // Convert the image to the texture format
+                var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, XRCpuImage.Transformation.MirrorY);
+                var data = recordingTexture.GetRawTextureData<byte>();
+                cpuImage.Convert(conversionParams, data);
+                
+                // Apply the texture changes
+                recordingTexture.Apply();
+                
+                // Update the video capture
+                videoCapture.UpdateSourceTexture();
+                videoCapture.UpdateFrame();
+                
+                frameCount++;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[SynchronizedVideoRecorder] Error processing AR camera frame: {e.Message}");
+            }
+            finally
+            {
+                // Always dispose the CPU image
+                cpuImage.Dispose();
+            }
         }
 
         /// <summary>
@@ -457,8 +304,11 @@ namespace BodyTracking.Recording
             
             isRecording = false;
             
-            // Restore UI settings
-            RestoreUISettings();
+            // Unsubscribe from AR camera events
+            if (arCameraManager != null)
+            {
+                arCameraManager.frameReceived -= OnARCameraFrameReceived;
+            }
             
             // Stop video recording
             videoCapture.StopCapture();
@@ -490,6 +340,13 @@ namespace BodyTracking.Recording
                 }
             }
             
+            // Clean up recording texture
+            if (recordingTexture != null)
+            {
+                DestroyImmediate(recordingTexture);
+                recordingTexture = null;
+            }
+            
             // Create result
             var result = new SynchronizedRecordingResult
             {
@@ -506,6 +363,7 @@ namespace BodyTracking.Recording
             Debug.Log($"[SynchronizedVideoRecorder] Synchronized recording completed: {result.sessionId}");
             Debug.Log($"[SynchronizedVideoRecorder] Video: {result.videoFilePath}");
             Debug.Log($"[SynchronizedVideoRecorder] Hip JSON: {result.hipDataPath}");
+            Debug.Log($"[SynchronizedVideoRecorder] Video frames: {frameCount}");
             Debug.Log($"[SynchronizedVideoRecorder] Hip frames: {hipData.FrameCount}");
             Debug.Log($"[SynchronizedVideoRecorder] Duration: {hipData.duration:F2}s");
             
@@ -590,6 +448,49 @@ namespace BodyTracking.Recording
             return RecordingStorage.GetRecordingMetadata(sessionId, storageFormat);
         }
 
+        /// <summary>
+        /// Configure AR camera settings at runtime
+        /// </summary>
+        public void SetARCameraSettings(bool useARResolution, Vector2Int customRes = default)
+        {
+            if (isRecording)
+            {
+                Debug.LogWarning("[SynchronizedVideoRecorder] Cannot change camera settings during recording");
+                return;
+            }
+            
+            useARCameraResolution = useARResolution;
+            if (customRes != default)
+            {
+                customResolution = customRes;
+            }
+            
+            Debug.Log($"[SynchronizedVideoRecorder] AR camera settings updated - Use AR resolution: {useARResolution}, Custom: {customResolution}");
+        }
+
+        /// <summary>
+        /// Get current recording status summary
+        /// </summary>
+        public string GetRecordingStatusSummary()
+        {
+            var summary = $"Recording: {isRecording}\n";
+            summary += $"Session ID: {currentSessionId}\n";
+            summary += $"Frame Count: {frameCount}\n";
+            
+            if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+            {
+                var config = arCameraManager.currentConfiguration.Value;
+                summary += $"AR Camera: {config.width}x{config.height}\n";
+            }
+            
+            if (recordingTexture != null)
+            {
+                summary += $"Recording Texture: {recordingTexture.width}x{recordingTexture.height}\n";
+            }
+            
+            return summary;
+        }
+
         #region Event Handlers
 
         private void OnVideoCaptureStarted()
@@ -606,13 +507,23 @@ namespace BodyTracking.Recording
 
         void OnDestroy()
         {
-            // Restore UI settings if they were modified
-            RestoreUISettings();
+            // Unsubscribe from events
+            if (arCameraManager != null)
+            {
+                arCameraManager.frameReceived -= OnARCameraFrameReceived;
+            }
             
             if (videoCapture != null)
             {
                 videoCapture.OnCaptureStart.RemoveListener(OnVideoCaptureStarted);
                 videoCapture.CompletedFileWritingAction -= OnVideoCaptureCompleted;
+            }
+            
+            // Clean up recording texture
+            if (recordingTexture != null)
+            {
+                DestroyImmediate(recordingTexture);
+                recordingTexture = null;
             }
         }
     }
