@@ -453,6 +453,7 @@
 -analyzer:"/Applications/Unity/Hub/Editor/2023.2.20f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll"
 "Assets/Scripts/Editor/iOSBuildHelper.cs"
 "Assets/Scripts/Editor/MVPSceneSetup.cs"
+"Assets/Scripts/Editor/SceneSetup.cs"
 -langversion:9.0
 
 /deterministic

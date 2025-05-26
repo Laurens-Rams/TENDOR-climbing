@@ -77,53 +77,126 @@ namespace TENDOR.Testing
         {
             if (!enableRemoteTesting || !showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(10, 10, 300, 400));
+            // Larger area for better visibility
+            GUILayout.BeginArea(new Rect(10, 10, 400, 500));
             GUILayout.BeginVertical("box");
+            
+            // Title with larger font
+            var titleStyle = new GUIStyle(GUI.skin.label);
+            titleStyle.fontSize = 18;
+            titleStyle.fontStyle = FontStyle.Bold;
             
 #if UNITY_EDITOR
             GUILayout.Label("🎮 AR Remote Testing", EditorStyles.boldLabel);
 #else
-            GUILayout.Label("🎮 AR Remote Testing", GUI.skin.label);
+            GUILayout.Label("🎮 AR Remote Testing", titleStyle);
 #endif
-            GUILayout.Space(10);
+            GUILayout.Space(15);
             
-            // AR Status
-            GUILayout.Label("📱 AR Status:");
-            GUILayout.Label($"Session: {(arSession != null && arSession.enabled ? "✅" : "❌")}");
-            GUILayout.Label($"Camera: {(cameraManager != null && cameraManager.enabled ? "✅" : "❌")}");
-            GUILayout.Label($"Image Tracking: {(trackedImageManager != null && trackedImageManager.enabled ? "✅" : "❌")}");
+            // AR Status section
+            var headerStyle = new GUIStyle(GUI.skin.label);
+            headerStyle.fontSize = 14;
+            headerStyle.fontStyle = FontStyle.Bold;
             
-            GUILayout.Space(10);
+            GUILayout.Label("📱 AR Status:", headerStyle);
+            GUILayout.Space(5);
             
-            // Game State
+            var statusStyle = new GUIStyle(GUI.skin.label);
+            statusStyle.fontSize = 12;
+            
+            GUILayout.Label($"Session: {(arSession != null && arSession.enabled ? "✅" : "❌")}", statusStyle);
+            GUILayout.Label($"Camera: {(cameraManager != null && cameraManager.enabled ? "✅" : "❌")}", statusStyle);
+            GUILayout.Label($"Image Tracking: {(trackedImageManager != null && trackedImageManager.enabled ? "✅" : "❌")}", statusStyle);
+            
+            GUILayout.Space(15);
+            
+            // Game State section
+            GUILayout.Label("🎯 Game State:", headerStyle);
+            GUILayout.Space(5);
+            
             if (stateManager != null)
             {
-                GUILayout.Label($"🎯 State: {stateManager.GetCurrentState()}");
+                var stateStyle = new GUIStyle(GUI.skin.label);
+                stateStyle.fontSize = 14;
+                stateStyle.fontStyle = FontStyle.Bold;
+                
+                // Color code the state
+                switch (stateManager.GetCurrentState())
+                {
+                    case GameState.Idle:
+                        stateStyle.normal.textColor = Color.white;
+                        break;
+                    case GameState.Recording:
+                        stateStyle.normal.textColor = Color.red;
+                        break;
+                    case GameState.Processing:
+                        stateStyle.normal.textColor = Color.yellow;
+                        break;
+                    case GameState.Playback:
+                        stateStyle.normal.textColor = Color.green;
+                        break;
+                }
+                
+                GUILayout.Label($"State: {stateManager.GetCurrentState()}", stateStyle);
             }
             
+            GUILayout.Space(20);
+            
+            // Controls section with bigger buttons
+            GUILayout.Label("🎮 Controls:", headerStyle);
             GUILayout.Space(10);
             
-            // Controls
-            GUILayout.Label("🎮 Controls:");
-            if (GUILayout.Button($"[{toggleDebugKey}] Toggle Debug"))
+            // Button style
+            var buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle.fontSize = 14;
+            buttonStyle.fontStyle = FontStyle.Bold;
+            
+            // Debug toggle button
+            var debugButtonColor = showDebugInfo ? Color.green : Color.gray;
+            GUI.backgroundColor = debugButtonColor;
+            if (GUILayout.Button($"[{toggleDebugKey}] Toggle Debug Info", buttonStyle, GUILayout.Height(40)))
             {
                 showDebugInfo = !showDebugInfo;
             }
+            GUI.backgroundColor = Color.white;
             
-            if (GUILayout.Button($"[{startRecordingKey}] Start Recording"))
+            GUILayout.Space(5);
+            
+            // Recording controls
+            GUI.backgroundColor = Color.red;
+            if (GUILayout.Button($"[{startRecordingKey}] Start Recording", buttonStyle, GUILayout.Height(40)))
             {
                 TestStartRecording();
             }
+            GUI.backgroundColor = Color.white;
             
-            if (GUILayout.Button($"[{stopRecordingKey}] Stop Recording"))
+            GUILayout.Space(5);
+            
+            GUI.backgroundColor = Color.yellow;
+            if (GUILayout.Button($"[{stopRecordingKey}] Stop Recording", buttonStyle, GUILayout.Height(40)))
             {
                 TestStopRecording();
             }
+            GUI.backgroundColor = Color.white;
             
-            if (GUILayout.Button($"[{switchStateKey}] Switch State"))
+            GUILayout.Space(5);
+            
+            GUI.backgroundColor = Color.cyan;
+            if (GUILayout.Button($"[{switchStateKey}] Switch State", buttonStyle, GUILayout.Height(40)))
             {
                 TestSwitchState();
             }
+            GUI.backgroundColor = Color.white;
+            
+            GUILayout.Space(15);
+            
+            // Instructions
+            var instructionStyle = new GUIStyle(GUI.skin.label);
+            instructionStyle.fontSize = 10;
+            instructionStyle.fontStyle = FontStyle.Italic;
+            instructionStyle.wordWrap = true;
+            
+            GUILayout.Label("💡 Use keyboard shortcuts or click buttons above to test state transitions. Check Console for detailed logs.", instructionStyle);
             
             GUILayout.EndVertical();
             GUILayout.EndArea();
