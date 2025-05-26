@@ -27,8 +27,8 @@ namespace BodyTracking.Recording
         [SerializeField] private bool useH264Codec = true;
         
         [Header("AR Camera Settings")]
-        [SerializeField] private bool useARCameraResolution = false;
         [SerializeField] private Vector2Int customResolution = new Vector2Int(1080, 1920);
+        [Tooltip("Custom resolution is only used as fallback when camera data is unavailable")]
         
         [Header("Synchronization")]
         [SerializeField] private BodyTrackingRecorder hipRecorder;
@@ -177,6 +177,7 @@ namespace BodyTracking.Recording
             int width, height;
             bool usedActualImageSize = false;
             
+            // Always try to use the camera's native resolution like the working VideoRecorder
             // First try to get actual camera image size (most accurate)
             XRCpuImage testImage;
             if (Globals.CameraManager != null && Globals.CameraManager.TryAcquireLatestCpuImage(out testImage))
@@ -195,45 +196,36 @@ namespace BodyTracking.Recording
                 testImage.Dispose();
                 Debug.Log($"[SynchronizedVideoRecorder] Using actual camera image size from arCameraManager: {width}x{height}");
             }
-            else if (useARCameraResolution)
+            // Use camera configuration like the working VideoRecorder
+            else if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
             {
-                // Fall back to configuration-based resolution
-                if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
-                {
-                    var config = Globals.CameraManager.currentConfiguration.Value;
-                    width = (int)config.width;
-                    height = (int)config.height;
-                    Debug.Log($"[SynchronizedVideoRecorder] Using AR camera resolution from Globals: {width}x{height}");
-                }
-                else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
-                {
-                    var config = arCameraManager.currentConfiguration.Value;
-                    width = (int)config.width;
-                    height = (int)config.height;
-                    Debug.Log($"[SynchronizedVideoRecorder] Using AR camera resolution from arCameraManager: {width}x{height}");
-                }
-                else
-                {
-                    // Fallback to custom resolution
-                    width = customResolution.x;
-                    height = customResolution.y;
-                    Debug.LogWarning($"[SynchronizedVideoRecorder] No AR camera configuration available, using custom resolution: {width}x{height}");
-                }
+                var config = Globals.CameraManager.currentConfiguration.Value;
+                width = (int)config.width;
+                height = (int)config.height;
+                Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
+            }
+            else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+            {
+                var config = arCameraManager.currentConfiguration.Value;
+                width = (int)config.width;
+                height = (int)config.height;
+                Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from arCameraManager: {width}x{height}");
             }
             else
             {
+                // Only use custom resolution as absolute last resort
                 width = customResolution.x;
                 height = customResolution.y;
-                Debug.Log($"[SynchronizedVideoRecorder] Using custom resolution: {width}x{height}");
+                Debug.LogWarning($"[SynchronizedVideoRecorder] No camera data available, using custom resolution as fallback: {width}x{height}");
             }
             
             // Create texture for recording
             recordingTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
             recordingTexture.name = usedActualImageSize ? 
                 "[SynchronizedVideoRecorder] Recording Texture (Actual Size)" : 
-                "[SynchronizedVideoRecorder] Recording Texture (Config Size)";
+                "[SynchronizedVideoRecorder] Recording Texture (Camera Config)";
             
-            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height} (Actual image size: {usedActualImageSize})");
+            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height} (Native camera resolution)");
         }
 
         /// <summary>
@@ -581,13 +573,14 @@ namespace BodyTracking.Recording
                 return;
             }
             
-            useARCameraResolution = useARResolution;
+            // Note: We always use camera native resolution now, this method only updates fallback custom resolution
             if (customRes != default)
             {
                 customResolution = customRes;
+                Debug.Log($"[SynchronizedVideoRecorder] Updated fallback custom resolution: {customResolution}");
             }
             
-            Debug.Log($"[SynchronizedVideoRecorder] AR camera settings updated - Use AR resolution: {useARResolution}, Custom: {customResolution}");
+            Debug.Log($"[SynchronizedVideoRecorder] Camera settings updated - Always using native camera resolution, Custom fallback: {customResolution}");
         }
 
         /// <summary>
