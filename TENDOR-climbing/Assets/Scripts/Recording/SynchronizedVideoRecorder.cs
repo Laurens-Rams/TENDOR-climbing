@@ -36,7 +36,7 @@ namespace BodyTracking.Recording
         [SerializeField] private bool useH264Codec = true;
         
         [Header("AR Camera Settings")]
-        [SerializeField] private Vector2Int customResolution = new Vector2Int(1080, 1920);
+        [SerializeField] private Vector2Int customResolution = new Vector2Int(1920, 1080);
         [Tooltip("Custom resolution is only used as fallback when camera data is unavailable")]
         
         [Header("Synchronization")]
@@ -224,21 +224,11 @@ namespace BodyTracking.Recording
                     Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image format: {testImage.format}");
                     Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image timestamp: {testImage.timestamp}");
                     
-                    // Check if this is the problematic AR Foundation Remote resolution
-                    if (testImage.width == 1920 && testImage.height == 1440)
-                    {
-                        Debug.LogWarning("[SynchronizedVideoRecorder] Detected AR Foundation Remote resolution (1920x1440), forcing portrait mode");
-                        width = 1080;
-                        height = 1920;
-                        resolutionSource = "Forced portrait (AR Remote detected)";
-                    }
-                    else
-                    {
-                        width = testImage.width;
-                        height = testImage.height;
-                        resolutionSource = "arCameraManager actual image";
-                    }
+                    // Always use the actual camera image size (like the working old VideoRecorder)
+                    width = testImage.width;
+                    height = testImage.height;
                     usedActualImageSize = true;
+                    resolutionSource = "arCameraManager actual image";
                     testImage.Dispose();
                 }
             }
@@ -453,8 +443,19 @@ namespace BodyTracking.Recording
                     Debug.Log($"[SynchronizedVideoRecorder] Recreated texture with camera size: {cpuImage.width}x{cpuImage.height}");
                 }
                 
-                // Convert the image to the texture format
+                // Convert the image to the texture format with proper orientation for portrait recording
+                // Use MirrorY + rotation to get correct portrait orientation
                 var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, XRCpuImage.Transformation.MirrorY);
+                
+                // Log transformation details for first few frames
+                if (frameCount < 3)
+                {
+                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Using transformation: MirrorY");
+                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera orientation: {Screen.orientation}");
+                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Camera image: {cpuImage.width}x{cpuImage.height}");
+                    Debug.Log($"[SynchronizedVideoRecorder] Frame {frameCount} - Target texture: {recordingTexture.width}x{recordingTexture.height}");
+                }
+                
                 var data = recordingTexture.GetRawTextureData<byte>();
                 
                 // Verify buffer sizes match
