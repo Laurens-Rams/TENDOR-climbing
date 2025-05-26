@@ -30,7 +30,7 @@ namespace BodyTracking.AR
             // Find the ARImageTargetManager if not assigned
             if (imageTargetManager == null && findImageTargetManagerAutomatically)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)
@@ -51,7 +51,7 @@ namespace BodyTracking.AR
         {
             if (imageTargetManager == null)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)
@@ -72,7 +72,7 @@ namespace BodyTracking.AR
         {
             if (imageTargetManager == null)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)
@@ -93,7 +93,7 @@ namespace BodyTracking.AR
         {
             if (imageTargetManager == null)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)
@@ -120,7 +120,7 @@ namespace BodyTracking.AR
         /// </summary>
         public static void ApplyStandardFix()
         {
-            var imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+            var imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             if (imageTargetManager != null)
             {
                 imageTargetManager.UpdateWallRotation(new Vector3(90f, 0f, 0f));

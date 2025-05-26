@@ -32,7 +32,7 @@ namespace BodyTracking.AR
         {
             if (imageTargetManager == null && autoFindImageTargetManager)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)

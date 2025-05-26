@@ -288,10 +288,19 @@ namespace BodyTracking.UI
                 status.AppendLine($"{bodyIcon} Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
                 
                 // Check for tracked bodies
-                var trackedBodies = FindObjectsOfType<UnityEngine.XR.ARFoundation.ARHumanBody>();
-                if (trackedBodies.Length > 0)
+                var trackedBodies = FindObjectsByType<UnityEngine.XR.ARFoundation.ARHumanBody>(FindObjectsSortMode.None);
+                int trackedBodyCount = 0;
+                foreach (var body in trackedBodies)
                 {
-                    status.AppendLine($"👤 Bodies detected: {trackedBodies.Length}");
+                    if (body.trackingState == UnityEngine.XR.ARSubsystems.TrackingState.Tracking)
+                    {
+                        trackedBodyCount++;
+                    }
+                }
+                
+                if (trackedBodyCount > 0)
+                {
+                    status.AppendLine($"👤 Bodies detected: {trackedBodyCount}");
                     
                     // Show tracking quality info if available
                     if (bodyRecorder != null)

@@ -47,7 +47,7 @@ namespace BodyTracking.AR
             
             if (trackedImageManager == null)
             {
-                trackedImageManager = FindObjectOfType<ARTrackedImageManager>();
+                trackedImageManager = FindFirstObjectByType<ARTrackedImageManager>();
             }
             
             if (trackedImageManager != null)
@@ -57,7 +57,7 @@ namespace BodyTracking.AR
             }
             else
             {
-                Debug.LogError("[ARImageTargetManager] ARTrackedImageManager not found!");
+                Debug.LogError("[ARImageTargetManager] No ARTrackedImageManager found in scene!");
             }
         }
 

@@ -127,7 +127,7 @@ namespace BodyTracking.Recording
         {
             if (characterController == null && autoFindCharacterController)
             {
-                characterController = FindObjectOfType<FBXCharacterController>();
+                characterController = FindFirstObjectByType<FBXCharacterController>();
                 if (characterController != null)
                 {
                    UnityEngine.Debug.Log("[BodyTrackingRecorder] Found FBXCharacterController automatically");

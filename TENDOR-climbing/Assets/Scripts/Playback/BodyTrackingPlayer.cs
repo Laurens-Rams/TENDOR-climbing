@@ -81,7 +81,7 @@ namespace BodyTracking.Playback
         {
             if (characterController == null && autoFindCharacterController)
             {
-                characterController = FindObjectOfType<FBXCharacterController>();
+                characterController = FindFirstObjectByType<FBXCharacterController>();
                 if (characterController != null)
                 {
                    UnityEngine.Debug.Log("[BodyTrackingPlayer] Found FBXCharacterController automatically");

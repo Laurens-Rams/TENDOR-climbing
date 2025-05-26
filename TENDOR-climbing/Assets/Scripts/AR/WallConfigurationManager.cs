@@ -41,14 +41,14 @@ namespace BodyTracking.AR
 
         void Start()
         {
-            if (imageTargetManager == null && autoFindImageTargetManager)
+            if (imageTargetManager == null)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
             }
             
             if (imageTargetManager == null)
             {
-                Debug.LogError("[WallConfigurationManager] ARImageTargetManager not found!");
+                Debug.LogError("[WallConfigurationManager] No ARImageTargetManager found in scene!");
                 return;
             }
             

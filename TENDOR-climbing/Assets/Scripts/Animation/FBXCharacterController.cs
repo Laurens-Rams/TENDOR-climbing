@@ -27,6 +27,9 @@ namespace BodyTracking.Animation
         [SerializeField] private AnimatorOverrideController animatorOverrideController;
         [SerializeField] private string defaultAnimationClipName = ""; // Will auto-detect from NewAnimationOnly.fbx
         
+        [Header("Animation References")]
+        [SerializeField] private AnimationClip defaultAnimationClip; // Drag the Take 001 clip here in inspector
+        
         // State
         private bool isInitialized = false;
         private Vector3 targetHipPosition;
@@ -219,7 +222,7 @@ namespace BodyTracking.Animation
                 Debug.Log($"[FBXCharacterController] Character '{characterRoot.name}' at {characterRoot.transform.position:F3}");
                 
                 // Check if character is visible to camera
-                Camera arCamera = Camera.main ?? FindObjectOfType<Camera>();
+                Camera arCamera = Camera.main ?? FindFirstObjectByType<Camera>();
                 if (arCamera != null)
                 {
                     Vector3 relativePos = arCamera.transform.InverseTransformPoint(characterRoot.transform.position);
@@ -261,6 +264,23 @@ namespace BodyTracking.Animation
         /// </summary>
         private GameObject InstantiateCharacterFromPrefab()
         {
+            // Since NewBody is already in the scene, we don't need to instantiate it
+            // Just find it in the scene
+            GameObject existingCharacter = GameObject.Find("NewBody");
+            if (existingCharacter == null)
+            {
+                existingCharacter = GameObject.Find("Newbody");
+            }
+            
+            if (existingCharacter != null)
+            {
+                if (enableLogging) 
+                {
+                    Debug.Log($"[FBXCharacterController] Found existing character '{existingCharacter.name}' in scene");
+                }
+                return existingCharacter;
+            }
+            
             #if UNITY_EDITOR
             // Find the prefab asset by searching for it in the project
             string[] guids = UnityEditor.AssetDatabase.FindAssets("t:GameObject NewBody");
@@ -302,7 +322,7 @@ namespace BodyTracking.Animation
                 return null;
             }
             #else
-            Debug.LogError("[FBXCharacterController] Character instantiation only available in editor mode");
+            Debug.LogError("[FBXCharacterController] Character not found in scene and cannot instantiate in build. Please ensure NewBody is present in the scene.");
             return null;
             #endif
         }
@@ -510,7 +530,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void MakeNewBodyVisible()
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 // Re-initialize to ensure character is properly instantiated
@@ -536,7 +556,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void LoadAnimationFromPath(string fbxPath, string animationName = "IMG_36822")
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 bool success = controller.LoadAnimationFromFBX(fbxPath, animationName);
@@ -561,7 +581,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void SetHipBoneByName(string boneName)
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 Transform bone = controller.FindChildRecursive(controller.characterRoot.transform, boneName);
@@ -591,7 +611,7 @@ namespace BodyTracking.Animation
             Debug.Log("[FBXCharacterController] Making character visible for testing...");
             
             // Position in front of camera
-            Camera arCamera = Camera.main ?? FindObjectOfType<Camera>();
+            Camera arCamera = Camera.main ?? FindFirstObjectByType<Camera>();
             if (arCamera != null)
             {
                 Vector3 frontPos = arCamera.transform.position + arCamera.transform.forward * 2.0f;
@@ -712,7 +732,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void TestAnimationPlayback()
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 Debug.Log("[FBXCharacterController] === MANUAL ANIMATION TEST ===");
@@ -738,7 +758,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void CheckAnimatorStatus()
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null && controller.characterAnimator != null)
             {
                 var animator = controller.characterAnimator;
@@ -778,7 +798,7 @@ namespace BodyTracking.Animation
         public static void FindRuntimeCharacter()
         {
             #if UNITY_EDITOR
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null && controller.characterRoot != null)
             {
                 Debug.Log($"[FBXCharacterController] === RUNTIME CHARACTER FOUND ===");
@@ -819,7 +839,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void MakeCharacterVisible()
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 controller.MakeCharacterVisibleForTesting();
@@ -844,7 +864,7 @@ namespace BodyTracking.Animation
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void ForceReloadAnimationFromNewAnimationFBX()
         {
-            FBXCharacterController controller = FindObjectOfType<FBXCharacterController>();
+            FBXCharacterController controller = FindFirstObjectByType<FBXCharacterController>();
             if (controller != null)
             {
                 Debug.Log("[FBXCharacterController] === FORCE RELOADING ANIMATION ===");
@@ -1227,6 +1247,18 @@ namespace BodyTracking.Animation
                 }
             }
             
+            // Try to use the directly assigned animation clip first (works in both editor and builds)
+            if (defaultAnimationClip != null)
+            {
+                if (ApplyAnimationClip(defaultAnimationClip, "CharacterAnimation"))
+                {
+                    Debug.Log($"[FBXCharacterController] ✅ Loaded animation '{defaultAnimationClip.name}' from direct reference");
+                    return true;
+                }
+            }
+            
+            // Fallback to FBX loading (editor only)
+            #if UNITY_EDITOR
             // Always try to load from NewAnimationOnly.fbx first (this should be the primary source)
             string animationToLoad = GetFirstAnimationFromNewAnimationFBX();
             if (!string.IsNullOrEmpty(animationToLoad))
@@ -1248,25 +1280,9 @@ namespace BodyTracking.Animation
                 Debug.Log($"[FBXCharacterController] ✅ Loaded animation 'Take 001' from NewAnimationOnly.fbx (direct fallback)");
                 return true;
             }
+            #endif
             
-            // Fallback to default animation name if specified
-            if (!string.IsNullOrEmpty(defaultAnimationClipName))
-            {
-                if (LoadAnimationFromFBX("Assets/DeepMotion/NewAnimationOnly.fbx", defaultAnimationClipName))
-                {
-                    Debug.Log($"[FBXCharacterController] ✅ Loaded default animation '{defaultAnimationClipName}' from NewAnimationOnly.fbx");
-                    return true;
-                }
-                
-                // Try NewBody.fbx as last resort
-                if (LoadAnimationFromFBX("Assets/DeepMotion/NewBody.fbx", defaultAnimationClipName))
-                {
-                    Debug.Log($"[FBXCharacterController] ✅ Loaded animation '{defaultAnimationClipName}' from NewBody.fbx (fallback)");
-                    return true;
-                }
-            }
-            
-            Debug.LogError("[FBXCharacterController] ❌ Failed to load any animation - animation playback will not work");
+            Debug.LogError("[FBXCharacterController] ❌ Failed to load any animation - animation playback will not work. Please assign defaultAnimationClip in inspector.");
             return false;
         }
 
@@ -1297,6 +1313,7 @@ namespace BodyTracking.Animation
         /// </summary>
         private string GetFirstAnimationFromNewAnimationFBX()
         {
+            #if UNITY_EDITOR
             try
             {
                 // Load all assets from the NewAnimationOnly.fbx file
@@ -1321,6 +1338,10 @@ namespace BodyTracking.Animation
                 // Fallback to known animation name from FBX meta file
                 return "Take 001";
             }
+            #else
+            // In build, always return the known animation name
+            return "Take 001";
+            #endif
         }
 
         /// <summary>

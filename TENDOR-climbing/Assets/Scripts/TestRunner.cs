@@ -41,22 +41,125 @@ public class TestRunner : MonoBehaviour
         Debug.Log("=== SYSTEM TESTS COMPLETE ===");
     }
 
-    private void TestBodyTrackingController()
+    [ContextMenu("Test Body Tracking Controller")]
+    public void TestBodyTrackingController()
     {
-        Debug.Log("--- Testing BodyTrackingController ---");
-        
-        var controller = FindObjectOfType<BodyTrackingController>();
+        var controller = FindFirstObjectByType<BodyTrackingController>();
         if (controller != null)
         {
-            Debug.Log("✅ BodyTrackingController found");
-            Debug.Log($"Initialized: {controller.IsInitialized}");
-            Debug.Log($"Current Mode: {controller.CurrentMode}");
-            Debug.Log($"Can Record: {controller.CanRecord}");
-            Debug.Log($"Can Playback: {controller.CanPlayback}");
+            Debug.Log($"[TestRunner] Found BodyTrackingController: {controller.name}");
+            Debug.Log($"[TestRunner] Current mode: {controller.CurrentMode}");
+            Debug.Log($"[TestRunner] Can record: {controller.CanRecord}");
+            Debug.Log($"[TestRunner] Can playback: {controller.CanPlayback}");
+            Debug.Log($"[TestRunner] Is recording: {controller.IsRecording}");
+            Debug.Log($"[TestRunner] Is playing: {controller.IsPlaying}");
         }
         else
         {
-            Debug.LogError("❌ BodyTrackingController not found");
+            Debug.LogError("[TestRunner] No BodyTrackingController found in scene");
+        }
+    }
+
+    [ContextMenu("Test Character Controller")]
+    public void TestCharacterController()
+    {
+        var characterController = FindFirstObjectByType<FBXCharacterController>();
+        if (characterController != null)
+        {
+            Debug.Log($"[TestRunner] Found FBXCharacterController on: {characterController.name}");
+            Debug.Log($"[TestRunner] Character info:\n{characterController.GetCharacterInfo()}");
+            
+            // Test making character visible
+            characterController.MakeCharacterVisibleForTesting();
+            Debug.Log("[TestRunner] Made character visible for testing");
+        }
+        else
+        {
+            Debug.LogError("[TestRunner] No FBXCharacterController found in scene");
+        }
+    }
+
+    [ContextMenu("Test Character Animation")]
+    public void TestCharacterAnimation()
+    {
+        var characterController = FindFirstObjectByType<FBXCharacterController>();
+        if (characterController != null)
+        {
+            Debug.Log($"[TestRunner] Testing animation on: {characterController.name}");
+            
+            // Try to start animation playback
+            bool success = characterController.StartAnimationPlayback();
+            if (success)
+            {
+                Debug.Log("[TestRunner] ✅ Animation playback started successfully");
+            }
+            else
+            {
+                Debug.LogError("[TestRunner] ❌ Failed to start animation playback");
+            }
+        }
+        else
+        {
+            Debug.LogError("[TestRunner] No FBXCharacterController found in scene");
+        }
+    }
+
+    [ContextMenu("Test AR Session")]
+    public void TestARSession()
+    {
+        // Use XROrigin instead of deprecated ARSessionOrigin
+        var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
+        if (xrOrigin != null)
+        {
+            Debug.Log($"[TestRunner] Found XROrigin: {xrOrigin.name}");
+            Debug.Log($"[TestRunner] XROrigin position: {xrOrigin.transform.position}");
+            Debug.Log($"[TestRunner] XROrigin rotation: {xrOrigin.transform.rotation}");
+        }
+        else
+        {
+            Debug.LogError("[TestRunner] No XROrigin found in scene");
+        }
+    }
+
+    [ContextMenu("Test UI Canvas")]
+    public void TestUICanvas()
+    {
+        var canvas = FindFirstObjectByType<Canvas>();
+        if (canvas != null)
+        {
+            Debug.Log($"[TestRunner] Found Canvas: {canvas.name}");
+            Debug.Log($"[TestRunner] Canvas render mode: {canvas.renderMode}");
+            Debug.Log($"[TestRunner] Canvas world camera: {canvas.worldCamera}");
+            
+            // Find UI components
+            var buttons = canvas.GetComponentsInChildren<UnityEngine.UI.Button>();
+            var texts = canvas.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
+            
+            Debug.Log($"[TestRunner] Found {buttons.Length} buttons and {texts.Length} text components");
+        }
+        else
+        {
+            Debug.LogError("[TestRunner] No Canvas found in scene");
+        }
+    }
+
+    [ContextMenu("Run All Tests")]
+    public void RunAllTests()
+    {
+        var testRunner = FindFirstObjectByType<TestRunner>();
+        if (testRunner != null)
+        {
+            Debug.Log("[TestRunner] === RUNNING ALL TESTS ===");
+            testRunner.TestBodyTrackingController();
+            testRunner.TestCharacterController();
+            testRunner.TestCharacterAnimation();
+            testRunner.TestARSession();
+            testRunner.TestUICanvas();
+            Debug.Log("[TestRunner] === ALL TESTS COMPLETED ===");
+        }
+        else
+        {
+            Debug.LogError("[TestRunner] No TestRunner found in scene");
         }
     }
 
@@ -64,7 +167,7 @@ public class TestRunner : MonoBehaviour
     {
         Debug.Log("--- Testing FBXCharacterController ---");
         
-        var characterController = FindObjectOfType<FBXCharacterController>();
+        var characterController = FindFirstObjectByType<FBXCharacterController>();
         if (characterController != null)
         {
             Debug.Log("✅ FBXCharacterController found");
@@ -100,7 +203,7 @@ public class TestRunner : MonoBehaviour
     {
         Debug.Log("--- Testing Animation System ---");
         
-        var characterController = FindObjectOfType<FBXCharacterController>();
+        var characterController = FindFirstObjectByType<FBXCharacterController>();
         if (characterController != null)
         {
             // Try to initialize
@@ -150,7 +253,7 @@ public class TestRunner : MonoBehaviour
         Debug.Log("--- Testing Scene Setup ---");
         
         // Check AR components
-        var arSessionOrigin = FindObjectOfType<UnityEngine.XR.ARFoundation.ARSessionOrigin>();
+        var arSessionOrigin = FindFirstObjectByType<UnityEngine.XR.ARFoundation.ARSessionOrigin>();
         if (arSessionOrigin != null)
         {
             Debug.Log("✅ AR Session Origin found");
@@ -167,7 +270,7 @@ public class TestRunner : MonoBehaviour
         }
 
         // Check UI
-        var canvas = FindObjectOfType<Canvas>();
+        var canvas = FindFirstObjectByType<Canvas>();
         Debug.Log($"UI Canvas: {(canvas != null ? "✅ Found" : "❌ Missing")}");
 
         // Check NewBody character in scene
@@ -198,7 +301,7 @@ public class TestRunner : MonoBehaviour
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public static void RunTests()
     {
-        var testRunner = FindObjectOfType<TestRunner>();
+        var testRunner = FindFirstObjectByType<TestRunner>();
         if (testRunner != null)
         {
             testRunner.StartCoroutine(testRunner.RunSystemTests());

@@ -49,7 +49,7 @@ namespace BodyTracking.UI
 
         void Start()
         {
-            configManager = FindObjectOfType<WallConfigurationManager>();
+            configManager = FindFirstObjectByType<WallConfigurationManager>();
             if (configManager == null)
             {
                 Debug.LogError("[WallConfigurationUI] WallConfigurationManager not found!");

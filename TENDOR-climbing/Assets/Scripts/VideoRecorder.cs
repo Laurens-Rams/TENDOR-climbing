@@ -42,14 +42,14 @@ public class VideoRecorder : MonoBehaviour
                 break;
 
             case CaptureBase.PhotoLibraryAuthorisationStatus.Unavailable:
-               UnityEngine.Debug.LogWarning("The photo library is unavailable, will use RelativeToPeristentData instead");
-                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+               UnityEngine.Debug.LogWarning("The photo library is unavailable, will use RelativeToPersistentData instead");
+                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
                 break;
 
             case CaptureBase.PhotoLibraryAuthorisationStatus.Denied:
                 // User has denied access, change output path
-               UnityEngine.Debug.LogWarning("User has denied access to the photo library, will use RelativeToPeristentData instead");
-                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+               UnityEngine.Debug.LogWarning("User has denied access to the photo library, will use RelativeToPersistentData instead");
+                capture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
                 break;
 
             case CaptureBase.PhotoLibraryAuthorisationStatus.NotDetermined:
@@ -64,14 +64,14 @@ public class VideoRecorder : MonoBehaviour
 
                     case CaptureBase.PhotoLibraryAuthorisationStatus.Denied:
                         // User has denied access, change output path
-                       UnityEngine.Debug.LogWarning("User has denied access to the photo library, will use RelativeToPeristentData instead");
-                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                       UnityEngine.Debug.LogWarning("User has denied access to the photo library, will use RelativeToPersistentData instead");
+                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
                         break;
 
                     case CaptureBase.PhotoLibraryAuthorisationStatus.NotDetermined:
                         // We were unable to request access for some reason, check the logs for any error information
-                       UnityEngine.Debug.LogWarning("Authorisation to access the photo library is still undetermined, will use RelativeToPeristentData instead");
-                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPeristentData;
+                       UnityEngine.Debug.LogWarning("Authorisation to access the photo library is still undetermined, will use RelativeToPersistentData instead");
+                        capture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
                         break;
                 }
                 break;

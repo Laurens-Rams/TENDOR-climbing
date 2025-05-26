@@ -74,7 +74,7 @@ namespace BodyTracking.Editor
             Debug.Log("=== TENDOR SYSTEM VALIDATION ===");
 
             // Check BodyTrackingController
-            var controller = FindObjectOfType<BodyTrackingController>();
+            var controller = FindFirstObjectByType<BodyTrackingController>();
             if (controller != null)
             {
                 Debug.Log("✅ BodyTrackingController found");
@@ -110,7 +110,7 @@ namespace BodyTracking.Editor
             }
 
             // Check FBXCharacterController
-            var characterController = FindObjectOfType<FBXCharacterController>();
+            var characterController = FindFirstObjectByType<FBXCharacterController>();
             if (characterController != null)
             {
                 Debug.Log("✅ FBXCharacterController found");
@@ -178,7 +178,7 @@ namespace BodyTracking.Editor
         {
             Debug.Log("=== TESTING ANIMATION SYSTEM ===");
 
-            var characterController = FindObjectOfType<FBXCharacterController>();
+            var characterController = FindFirstObjectByType<FBXCharacterController>();
             if (characterController != null)
             {
                 // Initialize if needed
@@ -220,8 +220,8 @@ namespace BodyTracking.Editor
         {
             Debug.Log("=== FIXING SCENE CONNECTIONS ===");
 
-            var controller = FindObjectOfType<BodyTrackingController>();
-            var characterController = FindObjectOfType<FBXCharacterController>();
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            var characterController = FindFirstObjectByType<FBXCharacterController>();
 
             if (controller != null && characterController != null)
             {
@@ -282,7 +282,7 @@ namespace BodyTracking.Editor
         {
             Debug.Log("=== CREATING MISSING CHARACTER ===");
 
-            var characterController = FindObjectOfType<FBXCharacterController>();
+            var characterController = FindFirstObjectByType<FBXCharacterController>();
             if (characterController != null)
             {
                 if (characterController.CharacterRootForEditor == null)

@@ -2626,6 +2626,8 @@ MonoBehaviour:
   showVisualization: 1
   characterController: {fileID: 1865019753}
   autoFindCharacterController: 1
+  warnAboutPortraitMode: 1
+  maxConsecutiveFailures: 90
 --- !u!114 &242295901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5399,6 +5401,58 @@ Material:
     - _Color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1580195639
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1580195641}
+  - component: {fileID: 1580195640}
+  m_Layer: 0
+  m_Name: tester
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1580195640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580195639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c02710ad34c4c7088626e83bb2fdd00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterController: {fileID: 1865019753}
+  newAnimationName: Take 001
+  testButton: {fileID: 0}
+  statusText: {fileID: 0}
+  currentAnimText: {fileID: 0}
+  autoFindCharacter: 1
+  createUIOnStart: 1
+  verboseLogging: 1
+--- !u!4 &1580195641
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580195639}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1680079934
 GameObject:
   m_ObjectHideFlags: 0
@@ -5632,6 +5686,8 @@ MonoBehaviour:
   animatorOverrideController: {fileID: 22100000, guid: c50d80148f3cb47ab9fa55ccc7b06495,
     type: 2}
   defaultAnimationClipName: 
+  defaultAnimationClip: {fileID: -203655887218126122, guid: 77ce0bf26e3464158a2efa42f2e70afb,
+    type: 3}
 --- !u!1 &1891130033
 GameObject:
   m_ObjectHideFlags: 0
@@ -6645,3 +6701,4 @@ SceneRoots:
   - {fileID: 496497993}
   - {fileID: 978671955}
   - {fileID: 1451212824}
+  - {fileID: 1580195641}
