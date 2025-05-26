@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using TENDOR.Core;
@@ -29,8 +28,8 @@ namespace TENDOR.Services.AR
         [SerializeField] private bool autoLoadImageLibrary = true;
         [SerializeField] private float imageLibraryRefreshInterval = 300f; // 5 minutes
 
-        // Runtime image library
-        private MutableRuntimeReferenceImageLibrary runtimeImageLibrary;
+        // Runtime image library (stubbed for now)
+        private object runtimeImageLibrary; // TODO: Replace with MutableRuntimeReferenceImageLibrary when AR Subsystems is available
         private Dictionary<string, BoulderData> loadedBoulders = new Dictionary<string, BoulderData>();
 
         // Events
@@ -248,13 +247,10 @@ namespace TENDOR.Services.AR
                 // Create runtime library if needed
                 if (runtimeImageLibrary == null)
                 {
-                    var library = arTrackedImageManager.CreateRuntimeLibrary();
-                    runtimeImageLibrary = library as MutableRuntimeReferenceImageLibrary;
-                    if (runtimeImageLibrary == null)
-                    {
-                        Logger.LogError("Failed to create mutable runtime image library", "AR");
-                        return;
-                    }
+                    // TODO: Replace with actual CreateRuntimeLibrary when AR Subsystems is available
+                    // var library = arTrackedImageManager.CreateRuntimeLibrary();
+                    runtimeImageLibrary = new object(); // Stub implementation
+                    Logger.Log("Created stub runtime image library", "AR");
                 }
 
                 // Load images for each boulder
@@ -272,11 +268,12 @@ namespace TENDOR.Services.AR
                     }
                 }
 
-                // Update the tracked image manager
+                // Update the tracked image manager (stubbed for now)
                 if (loadedCount > 0)
                 {
-                    arTrackedImageManager.referenceLibrary = runtimeImageLibrary;
-                    Logger.Log($"Loaded {loadedCount} new images into runtime library", "AR");
+                    // TODO: Set actual reference library when AR Subsystems is available
+                    // arTrackedImageManager.referenceLibrary = runtimeImageLibrary;
+                    Logger.Log($"Loaded {loadedCount} new images into runtime library (stub)", "AR");
                 }
 
                 lastLibraryRefresh = Time.time;
@@ -292,46 +289,16 @@ namespace TENDOR.Services.AR
         {
             try
             {
-                // Download image from Firebase Storage
-                byte[] imageData = await FirebaseService.Instance.DownloadFileAsync(boulder.targetUrl);
+                Logger.Log($"Loading boulder image (stub): {boulder.name}", "AR");
                 
-                if (imageData == null || imageData.Length == 0)
-                {
-                    Logger.LogWarning($"Failed to download image for boulder: {boulder.name}", "AR");
-                    return false;
-                }
-
-                // Create texture from image data
-                Texture2D texture = new Texture2D(2, 2);
-                if (!texture.LoadImage(imageData))
-                {
-                    Logger.LogWarning($"Failed to load texture for boulder: {boulder.name}", "AR");
-                    return false;
-                }
-
-                // Add to runtime library
-                var addImageJob = runtimeImageLibrary.ScheduleAddImageWithValidationJob(
-                    texture,
-                    boulder.name,
-                    boulder.physicalWidthM
-                );
-
-                // Wait for job completion
-                while (!addImageJob.jobHandle.IsCompleted)
-                {
-                    await Task.Yield();
-                }
-
-                if (addImageJob.status == AddReferenceImageJobStatus.Success)
-                {
-                    Logger.Log($"Successfully added image: {boulder.name}", "AR");
-                    return true;
-                }
-                else
-                {
-                    Logger.LogWarning($"Failed to add image to library: {boulder.name} - {addImageJob.status}", "AR");
-                    return false;
-                }
+                // TODO: Implement actual image loading when AR Subsystems package is available
+                // This is a stub implementation for now
+                
+                // Simulate download and processing
+                await Task.Delay(100);
+                
+                Logger.Log($"Successfully loaded image (stub): {boulder.name}", "AR");
+                return true;
             }
             catch (System.Exception e)
             {
@@ -354,11 +321,12 @@ namespace TENDOR.Services.AR
 
             foreach (var trackedImage in eventArgs.updated)
             {
-                if (trackedImage.trackingState == TrackingState.Tracking)
+                // TrackingState.Tracking = 2, TrackingState.None = 0 (from AR Subsystems documentation)
+                if ((int)trackedImage.trackingState == 2) // Tracking
                 {
                     OnImageTracked?.Invoke(trackedImage);
                 }
-                else if (trackedImage.trackingState == TrackingState.None)
+                else if ((int)trackedImage.trackingState == 0) // None
                 {
                     Logger.Log($"Image lost: {trackedImage.referenceImage.name}", "AR");
                     OnImageLost?.Invoke(trackedImage);
