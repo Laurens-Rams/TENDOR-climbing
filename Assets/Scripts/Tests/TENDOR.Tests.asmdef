@@ -5,6 +5,7 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "TENDOR.Core",
+        "TENDOR.Runtime",
         "TENDOR.Services",
         "Unity.XR.ARFoundation",
         "Unity.XR.CoreUtils"

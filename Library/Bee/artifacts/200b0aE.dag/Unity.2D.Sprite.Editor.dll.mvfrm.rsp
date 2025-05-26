@@ -119,8 +119,8 @@ Library/Bee/artifacts/mvdfrm/UnityEngine.WindModule.dll_C90457631BF83C6B.mvfrm
 Library/Bee/artifacts/mvdfrm/UnityEngine.XRModule.dll_5D4013641DC784CD.mvfrm
 Library/Bee/artifacts/mvdfrm/UnityEditor.iOS.Extensions.Xcode.dll_9D3908EBDFBA86B7.mvfrm
 Library/Bee/artifacts/mvdfrm/UnityEditor.OSXStandalone.Extensions.dll_B4EBD53E19006464.mvfrm
-Library/Bee/artifacts/mvdfrm/Unity.Analytics.StandardEvents.dll_2539AF974BFE7ABE.mvfrm
-Library/Bee/artifacts/mvdfrm/Unity.Analytics.Editor.dll_448B18A867B17122.mvfrm
-Library/Bee/artifacts/mvdfrm/Unity.Analytics.Tracker.dll_B294C7C751B9DF6F.mvfrm
-Library/Bee/artifacts/mvdfrm/Unity.Plastic.Antlr3.Runtime.dll_E340043392540AF9.mvfrm
-Library/Bee/artifacts/mvdfrm/Unity.Plastic.Newtonsoft.Json.dll_41CE71F42A4FD22C.mvfrm
+Library/Bee/artifacts/mvdfrm/Unity.Collections.LowLevel.ILSupport.dll_EF4D1401BBAB8F5F.mvfrm
+Library/Bee/artifacts/mvdfrm/Unity.VisualScripting.IonicZip.dll_3753AE2E22DD17B6.mvfrm
+Library/Bee/artifacts/mvdfrm/Unity.VisualScripting.YamlDotNet.dll_B9EB2E0105A28BA6.mvfrm
+Library/Bee/artifacts/mvdfrm/Unity.VisualScripting.TextureAssets.dll_51095754C66FE99E.mvfrm
+Library/Bee/artifacts/mvdfrm/Unity.VisualScripting.Antlr3.Runtime.dll_6B5854E2366B9BC5.mvfrm

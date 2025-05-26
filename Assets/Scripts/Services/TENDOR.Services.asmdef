@@ -3,6 +3,7 @@
     "rootNamespace": "TENDOR.Services",
     "references": [
         "TENDOR.Core",
+        "TENDOR.Runtime",
         "Unity.XR.ARFoundation",
         "Unity.XR.CoreUtils",
         "Firebase.App",
