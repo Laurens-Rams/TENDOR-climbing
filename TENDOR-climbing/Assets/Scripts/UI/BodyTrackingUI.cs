@@ -393,33 +393,49 @@ namespace BodyTracking.UI
         #region Public Methods (for external UI integration)
 
         /// <summary>
-        /// Get current system status for display
+        /// Get current system status
         /// </summary>
-        public string GetSystemStatus()
+        private string GetSystemStatus()
         {
             if (controller == null) return "Controller not available";
             
             if (!controller.IsInitialized) return "Initializing...";
             
+            string baseStatus = "";
             switch (controller.CurrentMode)
             {
                 case OperationMode.Ready:
                     if (controller.CanRecord && controller.CanPlayback)
-                        return "Ready - can record and playback hip position";
+                        baseStatus = "Ready - can record and playback";
                     else if (controller.CanRecord)
-                        return "Ready - can record hip position";
+                        baseStatus = "Ready - can record";
                     else
-                        return "Waiting for image target...";
-                        
+                        baseStatus = "Waiting for image target...";
+                    break;
+                    
                 case OperationMode.Recording:
-                    return "Recording hip position...";
+                    if (controller.IsVideoRecordingEnabled)
+                        baseStatus = "Recording video + hip tracking...";
+                    else
+                        baseStatus = "Recording hip position...";
+                    break;
                     
                 case OperationMode.Playing:
-                    return "Playing back hip movement...";
+                    baseStatus = "Playing back movement...";
+                    break;
                     
                 default:
-                    return "Unknown state";
+                    baseStatus = "Unknown state";
+                    break;
             }
+            
+            // Add video recording status
+            if (controller.IsVideoRecordingEnabled)
+            {
+                baseStatus += "\n📹 Video recording enabled";
+            }
+            
+            return baseStatus;
         }
 
         /// <summary>

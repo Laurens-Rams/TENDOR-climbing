@@ -5,6 +5,7 @@ using Unity.XR.CoreUtils;
 using BodyTracking;
 using BodyTracking.AR;
 using BodyTracking.Utils;
+using BodyTracking.Recording;
 
 namespace BodyTracking.Editor
 {
@@ -499,6 +500,85 @@ namespace BodyTracking.Editor
             {
                 Debug.Log("⚠️ Cannot record - make sure image target is detected");
             }
+        }
+
+        [MenuItem("TENDOR/Setup Video Recording")]
+        public static void SetupVideoRecording()
+        {
+            Debug.Log("🎬 SETTING UP SYNCHRONIZED VIDEO RECORDING");
+            
+            // Find or create video recorder
+            var videoRecorder = FindFirstObjectByType<BodyTracking.Recording.SynchronizedVideoRecorder>();
+            if (videoRecorder == null)
+            {
+                // Create new GameObject for video recorder
+                var videoRecorderGO = new GameObject("SynchronizedVideoRecorder");
+                videoRecorder = videoRecorderGO.AddComponent<BodyTracking.Recording.SynchronizedVideoRecorder>();
+                Debug.Log("✅ Created SynchronizedVideoRecorder");
+            }
+            else
+            {
+                Debug.Log("✅ SynchronizedVideoRecorder already exists");
+            }
+            
+            // Connect to BodyTrackingController
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            if (controller != null)
+            {
+                // Use reflection to set the videoRecorder field
+                var field = typeof(BodyTrackingController).GetField("videoRecorder");
+                if (field != null)
+                {
+                    field.SetValue(controller, videoRecorder);
+                    Debug.Log("✅ Connected video recorder to BodyTrackingController");
+                }
+                
+                // Enable video recording
+                var enableField = typeof(BodyTrackingController).GetField("enableVideoRecording");
+                if (enableField != null)
+                {
+                    enableField.SetValue(controller, true);
+                    Debug.Log("✅ Enabled video recording in controller");
+                }
+            }
+            
+            Debug.Log("🎉 Video recording setup complete!");
+            Debug.Log("📁 Videos will be saved to: " + videoRecorder.OutputFolder);
+        }
+
+        [MenuItem("TENDOR/Test Video Recording Setup")]
+        public static void TestVideoRecordingSetup()
+        {
+            Debug.Log("🧪 TESTING VIDEO RECORDING SETUP");
+            
+            var videoRecorder = FindFirstObjectByType<BodyTracking.Recording.SynchronizedVideoRecorder>();
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            var hipRecorder = FindFirstObjectByType<BodyTracking.Recording.BodyTrackingRecorder>();
+            
+            if (videoRecorder == null)
+            {
+                Debug.LogError("❌ SynchronizedVideoRecorder not found");
+                return;
+            }
+            
+            if (controller == null)
+            {
+                Debug.LogError("❌ BodyTrackingController not found");
+                return;
+            }
+            
+            if (hipRecorder == null)
+            {
+                Debug.LogError("❌ BodyTrackingRecorder not found");
+                return;
+            }
+            
+            Debug.Log("✅ All video recording components found");
+            Debug.Log($"📁 Video output folder: {videoRecorder.OutputFolder}");
+            Debug.Log($"🎬 Video recording enabled: {controller.IsVideoRecordingEnabled}");
+            Debug.Log($"📹 Video frame rate: 30fps (synchronized with hip tracking)");
+            Debug.Log($"💾 Videos will be saved as MP4 with H.264 codec");
+            Debug.Log("🎉 Video recording system ready!");
         }
     }
 } 

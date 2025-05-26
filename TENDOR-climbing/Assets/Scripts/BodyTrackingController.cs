@@ -21,9 +21,11 @@ namespace BodyTracking
         [Header("Components")]
         public BodyTrackingRecorder recorder;
         public BodyTrackingPlayer player;
+        public SynchronizedVideoRecorder videoRecorder;
         
         [Header("Settings")]
         public bool autoInitialize = true;
+        public bool enableVideoRecording = true;
         
         [Header("UI")]
         public TMPro.TextMeshProUGUI statusText;
@@ -36,6 +38,7 @@ namespace BodyTracking
         // Events
         public event System.Action<OperationMode> OnModeChanged;
         public event System.Action<HipRecording> OnRecordingComplete;
+        public event System.Action<SynchronizedRecordingResult> OnSynchronizedRecordingComplete;
         public event System.Action OnPlaybackStarted;
         public event System.Action OnPlaybackStopped;
         
@@ -46,6 +49,8 @@ namespace BodyTracking
         public bool CanPlayback => isInitialized && imageTargetManager.IsImageDetected && lastRecording != null && currentMode == OperationMode.Ready;
         public bool IsRecording => currentMode == OperationMode.Recording;
         public bool IsPlaying => currentMode == OperationMode.Playing;
+        public bool IsVideoRecordingEnabled => enableVideoRecording && videoRecorder != null;
+        public string VideoOutputFolder => videoRecorder?.OutputFolder;
 
         void Start()
         {
@@ -86,26 +91,53 @@ namespace BodyTracking
         }
 
         /// <summary>
-        /// Start recording hip tracking data
+        /// Start recording hip tracking data (and video if enabled)
         /// </summary>
         public bool StartRecording()
         {
             if (!CanRecord)
             {
-                Debug.LogWarning($"[BodyTrackingController] Cannot start hip recording - CanRecord: {CanRecord}");
-                UpdateStatus("Cannot start hip recording - check requirements");
+                Debug.LogWarning($"[BodyTrackingController] Cannot start recording - CanRecord: {CanRecord}");
+                UpdateStatus("Cannot start recording - check requirements");
                 return false;
             }
             
-            if (recorder.StartRecording())
+            bool success = false;
+            
+            // Start synchronized video recording if enabled
+            if (IsVideoRecordingEnabled)
             {
-                SetMode(OperationMode.Recording);
-                UpdateStatus("Recording hip position...");
-                Debug.Log("[BodyTrackingController] Started hip recording");
-                return true;
+                success = videoRecorder.StartSynchronizedRecording();
+                if (success)
+                {
+                    SetMode(OperationMode.Recording);
+                    UpdateStatus("Recording video + hip tracking...");
+                    Debug.Log("[BodyTrackingController] Started synchronized video + hip recording");
+                }
+                else
+                {
+                    Debug.LogError("[BodyTrackingController] Failed to start synchronized recording");
+                    UpdateStatus("Failed to start synchronized recording");
+                }
+            }
+            else
+            {
+                // Fallback to hip-only recording
+                success = recorder.StartRecording();
+                if (success)
+                {
+                    SetMode(OperationMode.Recording);
+                    UpdateStatus("Recording hip position...");
+                    Debug.Log("[BodyTrackingController] Started hip-only recording");
+                }
+                else
+                {
+                    Debug.LogError("[BodyTrackingController] Failed to start hip recording");
+                    UpdateStatus("Failed to start hip recording");
+                }
             }
             
-            return false;
+            return success;
         }
 
         /// <summary>
@@ -119,28 +151,61 @@ namespace BodyTracking
                 return null;
             }
             
-            lastRecording = recorder.StopRecording();
+            HipRecording hipData = null;
             
-            if (lastRecording != null)
+            // Stop synchronized recording if enabled
+            if (IsVideoRecordingEnabled && videoRecorder.IsRecording)
             {
-                // Auto-save the recording
-                string fileName = $"hip_recording_{System.DateTime.Now:yyyyMMdd_HHmmss}";
-                if (RecordingStorage.SaveRecording(lastRecording, fileName))
+                var syncResult = videoRecorder.StopSynchronizedRecording();
+                if (syncResult != null && syncResult.IsValid)
                 {
-                    Debug.Log($"[BodyTrackingController] Hip recording saved: {fileName}");
-                    UpdateStatus($"Hip recording saved: {lastRecording.FrameCount} frames");
+                    hipData = syncResult.hipRecording;
+                    lastRecording = hipData;
+                    
+                    Debug.Log($"[BodyTrackingController] Synchronized recording completed:");
+                    Debug.Log($"  Video: {syncResult.videoFilePath}");
+                    Debug.Log($"  Hip frames: {hipData.FrameCount}");
+                    Debug.Log($"  Duration: {hipData.duration:F2}s");
+                    
+                    UpdateStatus($"Synchronized recording saved: {syncResult.sessionId}");
+                    OnSynchronizedRecordingComplete?.Invoke(syncResult);
                 }
                 else
                 {
-                    Debug.LogError("[BodyTrackingController] Failed to save hip recording");
-                    UpdateStatus("Hip recording completed but save failed");
+                    Debug.LogError("[BodyTrackingController] Failed to complete synchronized recording");
+                    UpdateStatus("Synchronized recording failed");
                 }
+            }
+            else
+            {
+                // Fallback to hip-only recording
+                hipData = recorder.StopRecording();
+                lastRecording = hipData;
                 
-                OnRecordingComplete?.Invoke(lastRecording);
+                if (hipData != null)
+                {
+                    // Auto-save the recording
+                    string fileName = $"hip_recording_{System.DateTime.Now:yyyyMMdd_HHmmss}";
+                    if (RecordingStorage.SaveRecording(hipData, fileName))
+                    {
+                        Debug.Log($"[BodyTrackingController] Hip recording saved: {fileName}");
+                        UpdateStatus($"Hip recording saved: {hipData.FrameCount} frames");
+                    }
+                    else
+                    {
+                        Debug.LogError("[BodyTrackingController] Failed to save hip recording");
+                        UpdateStatus("Hip recording completed but save failed");
+                    }
+                }
+            }
+            
+            if (hipData != null)
+            {
+                OnRecordingComplete?.Invoke(hipData);
             }
             
             SetMode(OperationMode.Ready);
-            return lastRecording;
+            return hipData;
         }
 
         /// <summary>
@@ -237,29 +302,60 @@ namespace BodyTracking
 
         private bool ValidateDependencies()
         {
+            bool isValid = true;
+            
             if (humanBodyManager == null)
             {
-                humanBodyManager = FindObjectOfType<ARHumanBodyManager>();
+                humanBodyManager = FindFirstObjectByType<ARHumanBodyManager>();
                 if (humanBodyManager == null)
                 {
                     Debug.LogError("[BodyTrackingController] ARHumanBodyManager not found");
-                    UpdateStatus("Error: ARHumanBodyManager missing");
-                    return false;
+                    isValid = false;
                 }
             }
             
             if (imageTargetManager == null)
             {
-                imageTargetManager = FindObjectOfType<ARImageTargetManager>();
+                imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
                 if (imageTargetManager == null)
                 {
                     Debug.LogError("[BodyTrackingController] ARImageTargetManager not found");
-                    UpdateStatus("Error: ARImageTargetManager missing");
-                    return false;
+                    isValid = false;
                 }
             }
             
-            return true;
+            if (recorder == null)
+            {
+                recorder = FindFirstObjectByType<BodyTrackingRecorder>();
+                if (recorder == null)
+                {
+                    Debug.LogError("[BodyTrackingController] BodyTrackingRecorder not found");
+                    isValid = false;
+                }
+            }
+            
+            if (player == null)
+            {
+                player = FindFirstObjectByType<BodyTrackingPlayer>();
+                if (player == null)
+                {
+                    Debug.LogError("[BodyTrackingController] BodyTrackingPlayer not found");
+                    isValid = false;
+                }
+            }
+            
+            // Video recorder is optional but recommended
+            if (enableVideoRecording && videoRecorder == null)
+            {
+                videoRecorder = FindFirstObjectByType<SynchronizedVideoRecorder>();
+                if (videoRecorder == null)
+                {
+                    Debug.LogWarning("[BodyTrackingController] SynchronizedVideoRecorder not found - video recording disabled");
+                    enableVideoRecording = false;
+                }
+            }
+            
+            return isValid;
         }
 
         private void SetupComponents()
