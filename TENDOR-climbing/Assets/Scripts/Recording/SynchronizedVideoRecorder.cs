@@ -8,6 +8,9 @@ using UnityEngine.XR.ARSubsystems;
 using System;
 using System.IO;
 using System.Linq;
+#if UNITY_IOS && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 
 namespace BodyTracking.Recording
 {
@@ -19,6 +22,12 @@ namespace BodyTracking.Recording
     [RequireComponent(typeof(CaptureFromTexture))]
     public class SynchronizedVideoRecorder : MonoBehaviour
     {
+#if UNITY_IOS && !UNITY_EDITOR
+        // iOS native method to save video to Photos library
+        [DllImport("__Internal")]
+        private static extern void _SaveVideoToPhotosLibrary(string filePath);
+#endif
+
         [Header("Video Recording Settings")]
         [SerializeField] private ARCameraManager arCameraManager;
         [SerializeField] private bool autoFindARCamera = true;
@@ -87,18 +96,21 @@ namespace BodyTracking.Recording
         /// </summary>
         private void InitializeComponents()
         {
-            // Find AR camera manager
+            // Find AR camera manager - prioritize local assignment over Globals
             if (arCameraManager == null && autoFindARCamera)
             {
                 arCameraManager = FindFirstObjectByType<ARCameraManager>();
-                if (arCameraManager == null)
+                if (arCameraManager != null)
                 {
-                    // Try to get from Globals if available
-                    if (Globals.CameraManager != null)
-                    {
-                        arCameraManager = Globals.CameraManager;
-                    }
+                    Debug.Log($"[SynchronizedVideoRecorder] Found ARCameraManager: {arCameraManager.name}");
                 }
+            }
+            
+            // Only use Globals.CameraManager as fallback if local arCameraManager is not found
+            if (arCameraManager == null && Globals.CameraManager != null)
+            {
+                arCameraManager = Globals.CameraManager;
+                Debug.Log("[SynchronizedVideoRecorder] Using Globals.CameraManager as fallback");
             }
             
             // Find hip recorder
@@ -174,7 +186,8 @@ namespace BodyTracking.Recording
         /// </summary>
         private void CreateRecordingTexture()
         {
-            int width, height;
+            int width = customResolution.x; // Initialize with fallback values
+            int height = customResolution.y;
             bool usedActualImageSize = false;
             string resolutionSource = "Unknown";
             
@@ -184,8 +197,58 @@ namespace BodyTracking.Recording
             
             Debug.Log("[SynchronizedVideoRecorder] === CAMERA RESOLUTION DEBUG ===");
             
-            // Check Globals.CameraManager first
-            if (Globals.CameraManager != null)
+            // Check local arCameraManager first (since Globals.CameraManager appears broken)
+            if (arCameraManager != null)
+            {
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager available: {arCameraManager != null}");
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager name: {arCameraManager.name}");
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager enabled: {arCameraManager.enabled}");
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager gameObject active: {arCameraManager.gameObject.activeInHierarchy}");
+                
+                if (arCameraManager.currentConfiguration.HasValue)
+                {
+                    var config = arCameraManager.currentConfiguration.Value;
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config: {config.width}x{config.height}");
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config framerate: {config.framerate}");
+                }
+                else
+                {
+                    Debug.Log("[SynchronizedVideoRecorder] arCameraManager has no current configuration");
+                }
+                
+                bool canAcquireImage = arCameraManager.TryAcquireLatestCpuImage(out testImage);
+                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
+                if (canAcquireImage)
+                {
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager actual image size: {testImage.width}x{testImage.height}");
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image format: {testImage.format}");
+                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager image timestamp: {testImage.timestamp}");
+                    
+                    // Check if this is the problematic AR Foundation Remote resolution
+                    if (testImage.width == 1920 && testImage.height == 1440)
+                    {
+                        Debug.LogWarning("[SynchronizedVideoRecorder] Detected AR Foundation Remote resolution (1920x1440), forcing portrait mode");
+                        width = 1080;
+                        height = 1920;
+                        resolutionSource = "Forced portrait (AR Remote detected)";
+                    }
+                    else
+                    {
+                        width = testImage.width;
+                        height = testImage.height;
+                        resolutionSource = "arCameraManager actual image";
+                    }
+                    usedActualImageSize = true;
+                    testImage.Dispose();
+                }
+            }
+            else
+            {
+                Debug.Log("[SynchronizedVideoRecorder] arCameraManager is null");
+            }
+            
+            // Check Globals.CameraManager as fallback
+            if (!usedActualImageSize && Globals.CameraManager != null)
             {
                 Debug.Log($"[SynchronizedVideoRecorder] Globals.CameraManager available: {Globals.CameraManager != null}");
                 if (Globals.CameraManager.currentConfiguration.HasValue)
@@ -210,61 +273,30 @@ namespace BodyTracking.Recording
                     testImage.Dispose();
                 }
             }
-            else
-            {
-                Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager is null");
-            }
-            
-            // Check arCameraManager if we haven't found a source yet
-            if (!usedActualImageSize && arCameraManager != null)
-            {
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager available: {arCameraManager != null}");
-                if (arCameraManager.currentConfiguration.HasValue)
-                {
-                    var config = arCameraManager.currentConfiguration.Value;
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager config: {config.width}x{config.height}");
-                }
-                else
-                {
-                    Debug.Log("[SynchronizedVideoRecorder] arCameraManager has no current configuration");
-                }
-                
-                bool canAcquireImage = arCameraManager.TryAcquireLatestCpuImage(out testImage);
-                Debug.Log($"[SynchronizedVideoRecorder] arCameraManager.TryAcquireLatestCpuImage: {canAcquireImage}");
-                if (canAcquireImage)
-                {
-                    Debug.Log($"[SynchronizedVideoRecorder] arCameraManager actual image size: {testImage.width}x{testImage.height}");
-                    width = testImage.width;
-                    height = testImage.height;
-                    usedActualImageSize = true;
-                    resolutionSource = "arCameraManager actual image";
-                    testImage.Dispose();
-                }
-            }
             else if (!usedActualImageSize)
             {
-                Debug.Log("[SynchronizedVideoRecorder] arCameraManager is null or already found source");
+                Debug.Log("[SynchronizedVideoRecorder] Globals.CameraManager is null or already found source");
             }
             
             // Fall back to configuration if no actual image available
             if (!usedActualImageSize)
             {
-                // Use camera configuration like the working VideoRecorder
-                if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
-                {
-                    var config = Globals.CameraManager.currentConfiguration.Value;
-                    width = (int)config.width;
-                    height = (int)config.height;
-                    resolutionSource = "Globals.CameraManager configuration";
-                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
-                }
-                else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+                // Use camera configuration - prioritize local arCameraManager
+                if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
                 {
                     var config = arCameraManager.currentConfiguration.Value;
                     width = (int)config.width;
                     height = (int)config.height;
                     resolutionSource = "arCameraManager configuration";
                     Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from arCameraManager: {width}x{height}");
+                }
+                else if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
+                {
+                    var config = Globals.CameraManager.currentConfiguration.Value;
+                    width = (int)config.width;
+                    height = (int)config.height;
+                    resolutionSource = "Globals.CameraManager configuration";
+                    Debug.Log($"[SynchronizedVideoRecorder] Using camera configuration from Globals: {width}x{height}");
                 }
                 else
                 {
@@ -345,16 +377,16 @@ namespace BodyTracking.Recording
                 return false;
             }
             
-            // Subscribe to AR camera frame events - use Globals.CameraManager like the working old VideoRecorder
-            if (Globals.CameraManager != null)
-            {
-                Globals.CameraManager.frameReceived += OnARCameraFrameReceived;
-                Debug.Log("[SynchronizedVideoRecorder] Subscribed to Globals.CameraManager.frameReceived");
-            }
-            else if (arCameraManager != null)
+            // Subscribe to AR camera frame events - prioritize local arCameraManager
+            if (arCameraManager != null)
             {
                 arCameraManager.frameReceived += OnARCameraFrameReceived;
                 Debug.Log("[SynchronizedVideoRecorder] Subscribed to arCameraManager.frameReceived");
+            }
+            else if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived += OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Subscribed to Globals.CameraManager.frameReceived");
             }
             else
             {
@@ -377,19 +409,19 @@ namespace BodyTracking.Recording
         {
             if (!isRecording || recordingTexture == null) return;
             
-            // Try to acquire the latest CPU image using Globals.CameraManager like the working old VideoRecorder
+            // Try to acquire the latest CPU image - prioritize local arCameraManager
             bool imageAcquired = false;
             string imageSource = "None";
             
-            if (Globals.CameraManager != null)
-            {
-                imageAcquired = Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage);
-                imageSource = "Globals.CameraManager";
-            }
-            else if (arCameraManager != null)
+            if (arCameraManager != null)
             {
                 imageAcquired = arCameraManager.TryAcquireLatestCpuImage(out cpuImage);
                 imageSource = "arCameraManager";
+            }
+            else if (Globals.CameraManager != null)
+            {
+                imageAcquired = Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage);
+                imageSource = "Globals.CameraManager";
             }
             
             if (!imageAcquired)
@@ -471,15 +503,15 @@ namespace BodyTracking.Recording
             isRecording = false;
             
             // Unsubscribe from AR camera events
-            if (Globals.CameraManager != null)
-            {
-                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
-                Debug.Log("[SynchronizedVideoRecorder] Unsubscribed from Globals.CameraManager.frameReceived");
-            }
-            else if (arCameraManager != null)
+            if (arCameraManager != null)
             {
                 arCameraManager.frameReceived -= OnARCameraFrameReceived;
                 Debug.Log("[SynchronizedVideoRecorder] Unsubscribed from arCameraManager.frameReceived");
+            }
+            else if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Unsubscribed from Globals.CameraManager.frameReceived");
             }
             
             // Stop video recording
@@ -487,6 +519,9 @@ namespace BodyTracking.Recording
             
             // Get the actual video file path from AVPro
             currentVideoPath = videoCapture.LastFilePath;
+            
+            // Save video to Photos library (iOS only)
+            SaveVideoToPhotosLibrary(currentVideoPath);
             
             // Stop hip recording and get data
             HipRecording hipData = hipRecorder.StopRecording();
@@ -664,16 +699,16 @@ namespace BodyTracking.Recording
             summary += $"Session ID: {currentSessionId}\n";
             summary += $"Frame Count: {frameCount}\n";
             
-            // Check Globals.CameraManager first (like the working old VideoRecorder)
-            if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
-            {
-                var config = Globals.CameraManager.currentConfiguration.Value;
-                summary += $"AR Camera (Globals): {config.width}x{config.height}\n";
-            }
-            else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+            // Check local arCameraManager first
+            if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
             {
                 var config = arCameraManager.currentConfiguration.Value;
                 summary += $"AR Camera (Local): {config.width}x{config.height}\n";
+            }
+            else if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
+            {
+                var config = Globals.CameraManager.currentConfiguration.Value;
+                summary += $"AR Camera (Globals): {config.width}x{config.height}\n";
             }
             else
             {
@@ -686,6 +721,32 @@ namespace BodyTracking.Recording
             }
             
             return summary;
+        }
+
+        /// <summary>
+        /// Save video file to iOS Photos library
+        /// </summary>
+        private void SaveVideoToPhotosLibrary(string videoFilePath)
+        {
+            if (string.IsNullOrEmpty(videoFilePath) || !File.Exists(videoFilePath))
+            {
+                Debug.LogError($"[SynchronizedVideoRecorder] Cannot save to Photos library - video file not found: {videoFilePath}");
+                return;
+            }
+
+#if UNITY_IOS && !UNITY_EDITOR
+            try
+            {
+                _SaveVideoToPhotosLibrary(videoFilePath);
+                Debug.Log($"[SynchronizedVideoRecorder] Video saved to Photos library: {Path.GetFileName(videoFilePath)}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[SynchronizedVideoRecorder] Failed to save video to Photos library: {e.Message}");
+            }
+#else
+            Debug.Log($"[SynchronizedVideoRecorder] Photos library save only available on iOS device builds");
+#endif
         }
 
         #region Event Handlers
@@ -705,13 +766,13 @@ namespace BodyTracking.Recording
         void OnDestroy()
         {
             // Unsubscribe from events
-            if (Globals.CameraManager != null)
-            {
-                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
-            }
-            else if (arCameraManager != null)
+            if (arCameraManager != null)
             {
                 arCameraManager.frameReceived -= OnARCameraFrameReceived;
+            }
+            else if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
             }
             
             if (videoCapture != null)

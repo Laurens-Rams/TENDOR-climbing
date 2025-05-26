@@ -17,10 +17,10 @@ MonoBehaviour:
     cameraVideoSettings:
       enableVideo: 1
       syncCameraPoseWithVideo: 1
-      resolutionScale: 0.2527
-      quality: 34
-      maxVideoFps: 10.17
-      maxCpuImagesFps: 10.2
+      resolutionScale: 0.566
+      quality: 57
+      maxVideoFps: 8.54
+      maxCpuImagesFps: 7.6
     occlusionSettings:
       maxFPS: 10
       resolutionScale: 0.33
@@ -78,13 +78,13 @@ MonoBehaviour:
       e33: 1
     overrideProjectionMatrix: 0
     projectionMatrix:
-      e00: 3.0169647
+      e00: 3.0193455
       e01: 0
-      e02: 0.000016868114
+      e02: 0.00070655346
       e03: 0
       e10: 0
-      e11: 1.391628
-      e12: 0.00030970573
+      e11: 1.3927263
+      e12: 0.007912159
       e13: 0
       e20: 0
       e21: 0
@@ -100,4 +100,5 @@ MonoBehaviour:
     warnNativeCameraTrackingIsNotSupported: 1
     applyCameraBgFractalsFix: 1
   port: 44819
-  embeddedImageLibraries: []
+  embeddedImageLibraries:
+  - {fileID: 11400000, guid: 48549f1a5fbc0c342ab03e774b5d71d5, type: 2}

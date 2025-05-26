@@ -2794,10 +2794,15 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2512387469002778328, guid: 48cb3fb68c91eb94999fd99957eb0cae,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2512387469002778329, guid: 48cb3fb68c91eb94999fd99957eb0cae,
         type: 3}
       propertyPath: m_AutoFocus
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2512387469002778329, guid: 48cb3fb68c91eb94999fd99957eb0cae,
         type: 3}
@@ -2808,6 +2813,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_ClearFlags
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512387469002778331, guid: 48cb3fb68c91eb94999fd99957eb0cae,
+        type: 3}
+      propertyPath: m_FOVAxisMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2512387469002778331, guid: 48cb3fb68c91eb94999fd99957eb0cae,
         type: 3}
@@ -4843,8 +4853,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1451212824}
-  - component: {fileID: 1451212823}
   - component: {fileID: 1451212822}
+  - component: {fileID: 1451212825}
   m_Layer: 0
   m_Name: SynchronizedVideoRecorder
   m_TagString: Untagged
@@ -4864,12 +4874,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19e082506c70c4a4aae653f9811c0767, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  arCameraManager: {fileID: 0}
+  arCameraManager: {fileID: 1025028703}
   autoFindARCamera: 1
   videoOutputFolder: TENDOR_Recordings
   videoFrameRate: 30
   useH264Codec: 1
-  useARCameraResolution: 0
   customResolution: {x: 1080, y: 1920}
   hipRecorder: {fileID: 0}
   autoFindHipRecorder: 1
@@ -4878,7 +4887,22 @@ MonoBehaviour:
   includeTimestamp: 1
   autoSaveHipDataAsJSON: 1
   storageFormat: 0
---- !u!114 &1451212823
+--- !u!4 &1451212824
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451212821}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1451212825
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4887,7 +4911,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1451212821}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f41e58c74463edf43a9624fcdf483d19, type: 3}
+  m_Script: {fileID: 11500000, guid: de5a7a2f274da2340a2de24a1fffee45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _encoderHintsWindows:
@@ -5107,8 +5131,8 @@ MonoBehaviour:
   _imageSequenceFormatMacOS: 0
   _imageSequenceFormatIOS: 0
   _imageSequenceFormatAndroid: 0
-  _renderResolution: 20
-  _renderSize: {x: 1080, y: 1920}
+  _renderResolution: 19
+  _renderSize: {x: 1, y: 1}
   _renderAntiAliasing: -1
   _useMotionBlur: 0
   _motionBlurSamples: 16
@@ -5118,26 +5142,6 @@ MonoBehaviour:
   _supportTextureRecreate: 0
   _minimumDiskSpaceMB: -1
   _timelineController: {fileID: 0}
-  _videoPlayerController: {fileID: 0}
-  _cameraSelector: {fileID: 0}
-  _lastCamera: {fileID: 0}
-  _contribCameras: []
-  _useContributingCameras: 1
---- !u!4 &1451212824
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1451212821}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   _videoPlayerController: {fileID: 0}
   _manualUpdate: 0
 --- !u!1 &1461392600
