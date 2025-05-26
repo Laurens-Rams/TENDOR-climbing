@@ -1,0 +1,618 @@
+using UnityEngine;
+using UnityEditor;
+
+namespace BodyTracking.Editor
+{
+    /// <summary>
+    /// AR Foundation scene fixer for AR Remote setup
+    /// </summary>
+    public class ARSceneFixer : EditorWindow
+    {
+        [MenuItem("TENDOR/Fix AR Remote Scene")]
+        public static void FixARRemoteScene()
+        {
+            Debug.Log("=== FIXING AR REMOTE SCENE ===");
+            
+            // 1. Add XR Origin if missing
+            AddXROrigin();
+            
+            // 2. Add AR Session if missing
+            AddARSession();
+            
+            // 3. Add TENDOR components
+            AddTENDORComponents();
+            
+            // 4. Add Quality Optimizer
+            AddQualityOptimizer();
+            
+            // 5. Mark scene as dirty
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+                UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+            
+            Debug.Log("=== AR REMOTE SCENE FIXING COMPLETE ===");
+            Debug.Log("Scene has been set up for AR Remote! Save the scene to persist changes.");
+        }
+
+        private static void AddXROrigin()
+        {
+            Debug.Log("--- Adding XR Origin ---");
+            
+            // Check if XR Origin already exists
+            var existingXROrigin = FindFirstObjectByType(System.Type.GetType("Unity.XR.CoreUtils.XROrigin, Unity.XR.CoreUtils"));
+            if (existingXROrigin != null)
+            {
+                Debug.Log("✅ XR Origin already exists in scene");
+                AddARComponentsToXROrigin(existingXROrigin);
+                return;
+            }
+
+            // Try to instantiate from prefab
+            string prefabPath = "Assets/Samples/XR Interaction Toolkit/3.0.7/AR Starter Assets/Prefabs/XR Origin (AR Rig).prefab";
+            GameObject xrOriginPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            
+            if (xrOriginPrefab != null)
+            {
+                GameObject xrOriginInstance = PrefabUtility.InstantiatePrefab(xrOriginPrefab) as GameObject;
+                xrOriginInstance.name = "XR Origin (AR Rig)";
+                
+                Debug.Log("✅ Created XR Origin from prefab");
+                
+                // Add additional AR components
+                AddARComponentsToXROrigin(xrOriginInstance);
+            }
+            else
+            {
+                // Create XR Origin manually
+                CreateXROriginManually();
+            }
+        }
+
+        private static void AddARComponentsToXROrigin(GameObject xrOrigin)
+        {
+            Debug.Log("--- Adding AR Components to XR Origin ---");
+            
+            // Add AR Human Body Manager
+            var bodyManagerType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARHumanBodyManager, Unity.XR.ARFoundation");
+            if (bodyManagerType != null)
+            {
+                var bodyManager = xrOrigin.GetComponent(bodyManagerType);
+                if (bodyManager == null)
+                {
+                    bodyManager = xrOrigin.AddComponent(bodyManagerType);
+                    Debug.Log("✅ Added AR Human Body Manager");
+                }
+                else
+                {
+                    Debug.Log("✅ AR Human Body Manager already exists");
+                }
+            }
+
+            // Add AR Tracked Image Manager
+            var imageManagerType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARTrackedImageManager, Unity.XR.ARFoundation");
+            if (imageManagerType != null)
+            {
+                var imageManager = xrOrigin.GetComponent(imageManagerType);
+                if (imageManager == null)
+                {
+                    imageManager = xrOrigin.AddComponent(imageManagerType);
+                    Debug.Log("✅ Added AR Tracked Image Manager");
+                }
+                else
+                {
+                    Debug.Log("✅ AR Tracked Image Manager already exists");
+                }
+            }
+
+            // Add AR Plane Manager if not present
+            var planeManagerType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARPlaneManager, Unity.XR.ARFoundation");
+            if (planeManagerType != null)
+            {
+                var planeManager = xrOrigin.GetComponent(planeManagerType);
+                if (planeManager == null)
+                {
+                    planeManager = xrOrigin.AddComponent(planeManagerType);
+                    Debug.Log("✅ Added AR Plane Manager");
+                }
+            }
+
+            // Add AR Raycast Manager if not present
+            var raycastManagerType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARRaycastManager, Unity.XR.ARFoundation");
+            if (raycastManagerType != null)
+            {
+                var raycastManager = xrOrigin.GetComponent(raycastManagerType);
+                if (raycastManager == null)
+                {
+                    raycastManager = xrOrigin.AddComponent(raycastManagerType);
+                    Debug.Log("✅ Added AR Raycast Manager");
+                }
+            }
+        }
+
+        private static void CreateXROriginManually()
+        {
+            Debug.Log("--- Creating XR Origin Manually ---");
+            
+            // Create XR Origin GameObject
+            GameObject xrOriginGO = new GameObject("XR Origin (AR Rig)");
+            
+            // Add XR Origin component using reflection
+            var xrOriginType = System.Type.GetType("Unity.XR.CoreUtils.XROrigin, Unity.XR.CoreUtils");
+            if (xrOriginType != null)
+            {
+                var xrOrigin = xrOriginGO.AddComponent(xrOriginType);
+                
+                // Create Camera Offset
+                GameObject cameraOffset = new GameObject("Camera Offset");
+                cameraOffset.transform.SetParent(xrOriginGO.transform);
+                
+                // Set CameraFloorOffsetObject using reflection
+                var cameraOffsetField = xrOriginType.GetField("m_CameraFloorOffsetObject", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (cameraOffsetField != null)
+                {
+                    cameraOffsetField.SetValue(xrOrigin, cameraOffset);
+                }
+                
+                // Create AR Camera
+                GameObject arCameraGO = new GameObject("AR Camera");
+                arCameraGO.transform.SetParent(cameraOffset.transform);
+                
+                var camera = arCameraGO.AddComponent<Camera>();
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = Color.black;
+                camera.nearClipPlane = 0.1f;
+                camera.farClipPlane = 20f;
+                
+                // Add AR Camera components
+                var arCameraManagerType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARCameraManager, Unity.XR.ARFoundation");
+                var arCameraBackgroundType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARCameraBackground, Unity.XR.ARFoundation");
+                
+                if (arCameraManagerType != null)
+                    arCameraGO.AddComponent(arCameraManagerType);
+                if (arCameraBackgroundType != null)
+                    arCameraGO.AddComponent(arCameraBackgroundType);
+                
+                // Set Camera using reflection
+                var cameraField = xrOriginType.GetField("m_Camera", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (cameraField != null)
+                {
+                    cameraField.SetValue(xrOrigin, camera);
+                }
+                
+                // Add AR components
+                AddARComponentsToXROrigin(xrOriginGO);
+                
+                Debug.Log("✅ Created XR Origin manually");
+            }
+        }
+
+        private static void AddARSession()
+        {
+            Debug.Log("--- Adding AR Session ---");
+            
+            var arSessionType = System.Type.GetType("UnityEngine.XR.ARFoundation.ARSession, Unity.XR.ARFoundation");
+            if (arSessionType != null)
+            {
+                var existingSession = FindFirstObjectByType(arSessionType);
+                if (existingSession != null)
+                {
+                    Debug.Log("✅ AR Session already exists");
+                    return;
+                }
+
+                GameObject arSessionGO = new GameObject("AR Session");
+                var arSession = arSessionGO.AddComponent(arSessionType);
+                
+                Debug.Log("✅ Created AR Session");
+            }
+        }
+
+        private static void AddTENDORComponents()
+        {
+            Debug.Log("--- Adding TENDOR Components ---");
+            
+            // Add BodyTrackingSystem if missing
+            GameObject bodyTrackingSystem = GameObject.Find("BodyTrackingSystem");
+            if (bodyTrackingSystem == null)
+            {
+                bodyTrackingSystem = new GameObject("BodyTrackingSystem");
+                Debug.Log("✅ Created BodyTrackingSystem GameObject");
+            }
+
+            // Add BodyTrackingController
+            var bodyControllerType = System.Type.GetType("BodyTracking.BodyTrackingController");
+            if (bodyControllerType != null)
+            {
+                var bodyController = bodyTrackingSystem.GetComponent(bodyControllerType);
+                if (bodyController == null)
+                {
+                    bodyController = bodyTrackingSystem.AddComponent(bodyControllerType);
+                    Debug.Log("✅ Added BodyTrackingController");
+                }
+            }
+
+            // Add ARImageTargetManager
+            var imageTargetManagerType = System.Type.GetType("BodyTracking.AR.ARImageTargetManager");
+            if (imageTargetManagerType != null)
+            {
+                var imageTargetManager = bodyTrackingSystem.GetComponent(imageTargetManagerType);
+                if (imageTargetManager == null)
+                {
+                    imageTargetManager = bodyTrackingSystem.AddComponent(imageTargetManagerType);
+                    Debug.Log("✅ Added ARImageTargetManager");
+                }
+            }
+
+            // Add BodyTrackingRecorder
+            var recorderType = System.Type.GetType("BodyTracking.Recording.BodyTrackingRecorder");
+            if (recorderType != null)
+            {
+                var recorder = bodyTrackingSystem.GetComponent(recorderType);
+                if (recorder == null)
+                {
+                    recorder = bodyTrackingSystem.AddComponent(recorderType);
+                    Debug.Log("✅ Added BodyTrackingRecorder");
+                }
+            }
+
+            // Add BodyTrackingPlayer
+            var playerType = System.Type.GetType("BodyTracking.Playback.BodyTrackingPlayer");
+            if (playerType != null)
+            {
+                var player = bodyTrackingSystem.GetComponent(playerType);
+                if (player == null)
+                {
+                    player = bodyTrackingSystem.AddComponent(playerType);
+                    Debug.Log("✅ Added BodyTrackingPlayer");
+                }
+            }
+
+            Debug.Log("✅ TENDOR components setup complete");
+        }
+
+        private static void AddQualityOptimizer()
+        {
+            Debug.Log("--- Adding Quality Optimizer ---");
+            
+            var optimizerType = System.Type.GetType("BodyTracking.Utils.QualityOptimizer");
+            if (optimizerType != null)
+            {
+                var existingOptimizer = FindFirstObjectByType(optimizerType);
+                if (existingOptimizer != null)
+                {
+                    Debug.Log("✅ Quality Optimizer already exists");
+                    return;
+                }
+
+                GameObject optimizerGO = new GameObject("QualityOptimizer");
+                var optimizer = optimizerGO.AddComponent(optimizerType);
+                
+                Debug.Log("✅ Created Quality Optimizer");
+            }
+        }
+
+        [MenuItem("TENDOR/Fix Missing References")]
+        public static void FixMissingReferences()
+        {
+            Debug.Log("=== FIXING MISSING REFERENCES ===");
+            
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            if (controller == null)
+            {
+                Debug.LogError("❌ BodyTrackingController not found");
+                return;
+            }
+
+            var xrOrigin = FindFirstObjectByType<XROrigin>();
+            var humanBodyManager = xrOrigin?.GetComponent<ARHumanBodyManager>();
+            
+            if (humanBodyManager != null && controller.humanBodyManager == null)
+            {
+                controller.humanBodyManager = humanBodyManager;
+                Debug.Log("✅ Fixed BodyTrackingController.humanBodyManager reference");
+            }
+
+            // Fix ARHumanBodyManager connection to BodyTrackingController
+            if (humanBodyManager != null)
+            {
+                // Use reflection to connect humanBodyManager to BodyTrackingController
+                var bodyController = FindFirstObjectByType<BodyTrackingController>();
+                if (bodyController != null)
+                {
+                    // Find the BodyTrackingRecorder and connect its humanBodyManager field
+                    var recorder = bodyController.GetComponent<BodyTracking.Recording.BodyTrackingRecorder>();
+                    if (recorder != null)
+                    {
+                        var field = typeof(BodyTracking.Recording.BodyTrackingRecorder).GetField("humanBodyManager", 
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        if (field != null)
+                        {
+                            field.SetValue(recorder, humanBodyManager);
+                            Debug.Log("✅ Connected ARHumanBodyManager to BodyTrackingRecorder");
+                        }
+                    }
+                }
+            }
+
+            Debug.Log("=== MISSING REFERENCES FIXED ===");
+        }
+
+        [MenuItem("TENDOR/Validate AR Remote Setup")]
+        public static void ValidateARRemoteSetup()
+        {
+            Debug.Log("=== VALIDATING AR REMOTE SETUP ===");
+            
+            bool isValid = true;
+            
+            // Check XR Origin
+            var xrOrigin = FindFirstObjectByType<XROrigin>();
+            if (xrOrigin != null)
+            {
+                Debug.Log("✅ XR Origin found");
+                
+                // Check AR components
+                var humanBodyManager = xrOrigin.GetComponent<ARHumanBodyManager>();
+                var trackedImageManager = xrOrigin.GetComponent<ARTrackedImageManager>();
+                var planeManager = xrOrigin.GetComponent<ARPlaneManager>();
+                var raycastManager = xrOrigin.GetComponent<ARRaycastManager>();
+                
+                if (humanBodyManager != null) Debug.Log("✅ AR Human Body Manager found");
+                else { Debug.LogError("❌ AR Human Body Manager missing"); isValid = false; }
+                
+                if (trackedImageManager != null) Debug.Log("✅ AR Tracked Image Manager found");
+                else { Debug.LogError("❌ AR Tracked Image Manager missing"); isValid = false; }
+                
+                if (planeManager != null) Debug.Log("✅ AR Plane Manager found");
+                else { Debug.LogWarning("⚠️ AR Plane Manager missing (optional)"); }
+                
+                if (raycastManager != null) Debug.Log("✅ AR Raycast Manager found");
+                else { Debug.LogWarning("⚠️ AR Raycast Manager missing (optional)"); }
+            }
+            else
+            {
+                Debug.LogError("❌ XR Origin not found");
+                isValid = false;
+            }
+            
+            // Check AR Session
+            var arSession = FindFirstObjectByType<ARSession>();
+            if (arSession != null) Debug.Log("✅ AR Session found");
+            else { Debug.LogError("❌ AR Session missing"); isValid = false; }
+            
+            // Check TENDOR components
+            var bodyController = FindFirstObjectByType<BodyTrackingController>();
+            if (bodyController != null) Debug.Log("✅ BodyTrackingController found");
+            else { Debug.LogError("❌ BodyTrackingController missing"); isValid = false; }
+            
+            var imageTargetManager = FindFirstObjectByType<ARImageTargetManager>();
+            if (imageTargetManager != null) Debug.Log("✅ ARImageTargetManager found");
+            else { Debug.LogError("❌ ARImageTargetManager missing"); isValid = false; }
+            
+            var recorder = FindFirstObjectByType<BodyTracking.Recording.BodyTrackingRecorder>();
+            if (recorder != null) Debug.Log("✅ BodyTrackingRecorder found");
+            else { Debug.LogError("❌ BodyTrackingRecorder missing"); isValid = false; }
+            
+            var player = FindFirstObjectByType<BodyTracking.Playback.BodyTrackingPlayer>();
+            if (player != null) Debug.Log("✅ BodyTrackingPlayer found");
+            else { Debug.LogError("❌ BodyTrackingPlayer missing"); isValid = false; }
+            
+            // Check Quality Optimizer
+            var optimizer = FindFirstObjectByType<QualityOptimizer>();
+            if (optimizer != null) Debug.Log("✅ QualityOptimizer found");
+            else { Debug.LogWarning("⚠️ QualityOptimizer missing (recommended)"); }
+            
+            if (isValid)
+            {
+                Debug.Log("🎉 AR Remote setup is VALID!");
+            }
+            else
+            {
+                Debug.LogError("❌ AR Remote setup has issues. Run 'TENDOR/Fix AR Remote Scene' to fix them.");
+            }
+        }
+
+        [MenuItem("TENDOR/Test Character Animation")]
+        public static void TestCharacterAnimation()
+        {
+            Debug.Log("=== TESTING CHARACTER ANIMATION ===");
+            
+            var characterController = FindFirstObjectByType<BodyTracking.Animation.FBXCharacterController>();
+            if (characterController == null)
+            {
+                Debug.LogError("❌ FBXCharacterController not found in scene");
+                return;
+            }
+            
+            Debug.Log($"✅ Found FBXCharacterController on: {characterController.gameObject.name}");
+            
+            // Test animation loading
+            try
+            {
+                var method = typeof(BodyTracking.Animation.FBXCharacterController).GetMethod("LoadDefaultAnimation", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (method != null)
+                {
+                    method.Invoke(characterController, null);
+                    Debug.Log("✅ Animation loading test completed");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"❌ Animation loading test failed: {e.Message}");
+            }
+            
+            Debug.Log("=== CHARACTER ANIMATION TEST COMPLETE ===");
+        }
+
+        [MenuItem("TENDOR/Test Recording & Playback")]
+        public static void TestRecordingPlayback()
+        {
+            Debug.Log("=== TESTING RECORDING & PLAYBACK ===");
+            
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            if (controller == null)
+            {
+                Debug.LogError("❌ BodyTrackingController not found");
+                return;
+            }
+            
+            Debug.Log($"✅ BodyTrackingController found");
+            Debug.Log($"  - Can Record: {controller.CanRecord}");
+            Debug.Log($"  - Can Playback: {controller.CanPlayback}");
+            Debug.Log($"  - Is Recording: {controller.IsRecording}");
+            Debug.Log($"  - Is Playing: {controller.IsPlaying}");
+            Debug.Log($"  - Current Mode: {controller.CurrentMode}");
+            
+            var recorder = controller.recorder;
+            var player = controller.player;
+            
+            if (recorder != null) Debug.Log("✅ Recorder component found");
+            else Debug.LogError("❌ Recorder component missing");
+            
+            if (player != null) Debug.Log("✅ Player component found");
+            else Debug.LogError("❌ Player component missing");
+            
+            Debug.Log("=== RECORDING & PLAYBACK TEST COMPLETE ===");
+        }
+
+        [MenuItem("TENDOR/Setup Video Recording")]
+        public static void SetupVideoRecording()
+        {
+            Debug.Log("🎬 SETTING UP SYNCHRONIZED VIDEO RECORDING");
+            
+            // Find or create video recorder
+            var videoRecorderType = System.Type.GetType("BodyTracking.Recording.SynchronizedVideoRecorder");
+            if (videoRecorderType != null)
+            {
+                var videoRecorder = FindFirstObjectByType(videoRecorderType);
+                if (videoRecorder == null)
+                {
+                    // Create new GameObject for video recorder
+                    var videoRecorderGO = new GameObject("SynchronizedVideoRecorder");
+                    videoRecorder = videoRecorderGO.AddComponent(videoRecorderType);
+                    Debug.Log("✅ Created SynchronizedVideoRecorder");
+                }
+                else
+                {
+                    Debug.Log("✅ SynchronizedVideoRecorder already exists");
+                }
+                
+                // Connect to BodyTrackingController
+                var controllerType = System.Type.GetType("BodyTracking.BodyTrackingController");
+                if (controllerType != null)
+                {
+                    var controller = FindFirstObjectByType(controllerType);
+                    if (controller != null)
+                    {
+                        // Use reflection to set the videoRecorder field
+                        var field = controllerType.GetField("videoRecorder");
+                        if (field != null)
+                        {
+                            field.SetValue(controller, videoRecorder);
+                            Debug.Log("✅ Connected video recorder to BodyTrackingController");
+                        }
+                        
+                        // Enable video recording
+                        var enableField = controllerType.GetField("enableVideoRecording");
+                        if (enableField != null)
+                        {
+                            enableField.SetValue(controller, true);
+                            Debug.Log("✅ Enabled video recording in controller");
+                        }
+                    }
+                }
+                
+                Debug.Log("🎉 Video recording setup complete!");
+            }
+        }
+
+        [MenuItem("TENDOR/Test Video Recording Setup")]
+        public static void TestVideoRecordingSetup()
+        {
+            Debug.Log("🧪 TESTING VIDEO RECORDING SETUP");
+            
+            var videoRecorder = FindFirstObjectByType<BodyTracking.Recording.SynchronizedVideoRecorder>();
+            var controller = FindFirstObjectByType<BodyTrackingController>();
+            var hipRecorder = FindFirstObjectByType<BodyTracking.Recording.BodyTrackingRecorder>();
+            
+            if (videoRecorder == null)
+            {
+                Debug.LogError("❌ SynchronizedVideoRecorder not found");
+                return;
+            }
+            
+            if (controller == null)
+            {
+                Debug.LogError("❌ BodyTrackingController not found");
+                return;
+            }
+            
+            if (hipRecorder == null)
+            {
+                Debug.LogError("❌ BodyTrackingRecorder not found");
+                return;
+            }
+            
+            Debug.Log("✅ All video recording components found");
+            Debug.Log($"📁 Video output folder: {videoRecorder.OutputFolder}");
+            Debug.Log($"🎬 Video recording enabled: {controller.IsVideoRecordingEnabled}");
+            Debug.Log($"📹 Video frame rate: 30fps (synchronized with hip tracking)");
+            Debug.Log($"💾 Videos will be saved as MP4 with H.264 codec");
+            Debug.Log("🎉 Video recording system ready!");
+        }
+
+        [MenuItem("TENDOR/Create Wall 1 Content")]
+        public static void CreateWall1Content()
+        {
+            Debug.Log("🧱 CREATING WALL 1 CONTENT FOR IMAGE TARGET");
+            
+            // Find ARImageTargetManager
+            var imageTargetManagerType = System.Type.GetType("BodyTracking.AR.ARImageTargetManager");
+            if (imageTargetManagerType != null)
+            {
+                var imageTargetManager = FindFirstObjectByType(imageTargetManagerType);
+                if (imageTargetManager != null)
+                {
+                    var managerGO = ((Component)imageTargetManager).gameObject;
+                    
+                    // Check if "Wall 1" content already exists
+                    var existingContent = managerGO.transform.Find("Wall 1");
+                    if (existingContent != null)
+                    {
+                        Debug.Log("✅ Wall 1 content already exists");
+                        return;
+                    }
+                    
+                    // Create "Wall 1" content GameObject
+                    var wall1Content = new GameObject("Wall 1");
+                    wall1Content.transform.SetParent(managerGO.transform);
+                    wall1Content.transform.localPosition = Vector3.zero;
+                    wall1Content.transform.localRotation = Quaternion.identity;
+                    wall1Content.SetActive(false); // Initially inactive
+                    
+                    // Add a simple cube as visual content
+                    var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    cube.transform.SetParent(wall1Content.transform);
+                    cube.transform.localPosition = Vector3.zero;
+                    cube.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                    cube.name = "Wall Indicator";
+                    
+                    // Make it green to indicate successful tracking
+                    var renderer = cube.GetComponent<Renderer>();
+                    if (renderer != null)
+                    {
+                        renderer.material.color = Color.green;
+                    }
+                    
+                    Debug.Log("✅ Created Wall 1 content with visual indicator");
+                    Debug.Log("📍 Content will appear when 'Wall 1' image target is detected");
+                }
+                else
+                {
+                    Debug.LogError("❌ ARImageTargetManager not found. Run 'TENDOR/Fix AR Remote Scene' first.");
+                }
+            }
+        }
+    }
+} 

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using BodyTracking;
 using BodyTracking.Storage;
+using BodyTracking.AR;
 using System.Collections.Generic;
 
 namespace BodyTracking.UI
@@ -26,19 +27,36 @@ namespace BodyTracking.UI
         
         // State
         private List<string> availableRecordings = new List<string>();
+        private OrientationManager orientationManager;
+        private BodyTracking.Recording.BodyTrackingRecorder bodyRecorder;
 
         void Start()
         {
             // Find controller if not assigned
             if (controller == null)
             {
-                controller = FindObjectOfType<BodyTrackingController>();
+                controller = FindFirstObjectByType<BodyTrackingController>();
             }
             
             if (controller == null)
             {
                UnityEngine.Debug.LogError("[BodyTrackingUI] BodyTrackingController not found");
                 return;
+            }
+            
+            // Find orientation manager
+            orientationManager = FindFirstObjectByType<OrientationManager>();
+            if (orientationManager != null)
+            {
+                orientationManager.OnOrientationChanged += OnOrientationChanged;
+                orientationManager.OnBodyTrackingOptimalChanged += OnBodyTrackingOptimalChanged;
+            }
+            
+            // Find body recorder for tracking issue events
+            bodyRecorder = FindFirstObjectByType<BodyTracking.Recording.BodyTrackingRecorder>();
+            if (bodyRecorder != null)
+            {
+                bodyRecorder.OnTrackingIssueDetected += OnTrackingIssueDetected;
             }
             
             // Setup UI
@@ -60,6 +78,17 @@ namespace BodyTracking.UI
             {
                 controller.OnModeChanged -= OnModeChanged;
                 controller.OnRecordingComplete -= OnRecordingComplete;
+            }
+            
+            if (orientationManager != null)
+            {
+                orientationManager.OnOrientationChanged -= OnOrientationChanged;
+                orientationManager.OnBodyTrackingOptimalChanged -= OnBodyTrackingOptimalChanged;
+            }
+            
+            if (bodyRecorder != null)
+            {
+                bodyRecorder.OnTrackingIssueDetected -= OnTrackingIssueDetected;
             }
         }
 
@@ -205,11 +234,31 @@ namespace BodyTracking.UI
             // System initialization status
             if (!controller.IsInitialized)
             {
-                status.AppendLine("System initializing...");
+                status.AppendLine("🔄 System initializing...");
                 return status.ToString();
             }
             
-            status.AppendLine("System initialized");
+            status.AppendLine("✅ System initialized");
+            
+            // Orientation status
+            if (orientationManager != null)
+            {
+                string orientationIcon = orientationManager.IsBodyTrackingOptimal ? "✅" : "⚠️";
+                status.AppendLine($"{orientationIcon} {orientationManager.GetOrientationRecommendation()}");
+                
+                if (!orientationManager.IsBodyTrackingOptimal)
+                {
+                    status.AppendLine("📱 Rotate device to landscape for better tracking");
+                }
+            }
+            else
+            {
+                // Fallback orientation check
+                bool isLandscape = Screen.width > Screen.height;
+                string orientationIcon = isLandscape ? "✅" : "⚠️";
+                string orientationText = isLandscape ? "Landscape (optimal)" : "Portrait (suboptimal)";
+                status.AppendLine($"{orientationIcon} Orientation: {orientationText}");
+            }
             
             // Image tracking status
             var imageManager = controller.GetComponent<BodyTracking.AR.ARImageTargetManager>();
@@ -217,35 +266,53 @@ namespace BodyTracking.UI
             {
                 if (imageManager.IsImageDetected)
                 {
-                    status.AppendLine("Image target detected");
-                    status.AppendLine($"Target: {imageManager.ImageTargetTransform?.position}");
+                    status.AppendLine("📷 Image target detected");
+                    status.AppendLine($"🎯 Target: {imageManager.ImageTargetTransform?.position}");
                 }
                 else
                 {
-                    status.AppendLine("Searching for image target...");
-                    status.AppendLine("Point camera at wall target");
+                    status.AppendLine("🔍 Searching for image target...");
+                    status.AppendLine("📷 Point camera at wall target");
                 }
             }
             else
             {
-                status.AppendLine("Image manager not found");
+                status.AppendLine("❌ Image manager not found");
             }
             
             // Body tracking status
-            var humanBodyManager = FindObjectOfType<UnityEngine.XR.ARFoundation.ARHumanBodyManager>();
+            var humanBodyManager = FindFirstObjectByType<UnityEngine.XR.ARFoundation.ARHumanBodyManager>();
             if (humanBodyManager != null)
             {
-                status.AppendLine($"Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
+                string bodyIcon = humanBodyManager.enabled ? "✅" : "❌";
+                status.AppendLine($"{bodyIcon} Body tracking: {(humanBodyManager.enabled ? "Enabled" : "Disabled")}");
                 
                 // Check for tracked bodies
                 var trackedBodies = FindObjectsOfType<UnityEngine.XR.ARFoundation.ARHumanBody>();
                 if (trackedBodies.Length > 0)
                 {
-                    status.AppendLine($"Bodies detected: {trackedBodies.Length}");
+                    status.AppendLine($"👤 Bodies detected: {trackedBodies.Length}");
+                    
+                    // Show tracking quality info if available
+                    if (bodyRecorder != null)
+                    {
+                        if (bodyRecorder.HasRecentSuccessfulTracking)
+                        {
+                            status.AppendLine("✅ Joint data valid");
+                        }
+                        else if (bodyRecorder.ConsecutiveFailures > 30)
+                        {
+                            status.AppendLine($"⚠️ Tracking issues ({bodyRecorder.ConsecutiveFailures} failures)");
+                        }
+                    }
                 }
                 else
                 {
-                    status.AppendLine("No bodies detected");
+                    status.AppendLine("👤 No bodies detected");
+                    if (orientationManager != null && !orientationManager.IsBodyTrackingOptimal)
+                    {
+                        status.AppendLine("💡 Try landscape orientation");
+                    }
                 }
             }
             
@@ -253,27 +320,31 @@ namespace BodyTracking.UI
             switch (controller.CurrentMode)
             {
                 case OperationMode.Recording:
-                    status.AppendLine("RECORDING IN PROGRESS");
+                    status.AppendLine("🔴 RECORDING IN PROGRESS");
+                    if (bodyRecorder != null)
+                    {
+                        status.AppendLine($"⏱️ Duration: {bodyRecorder.RecordingDuration:F1}s");
+                    }
                     break;
                 case OperationMode.Playing:
-                    status.AppendLine("PLAYBACK IN PROGRESS");
+                    status.AppendLine("▶️ PLAYBACK IN PROGRESS");
                     break;
                 case OperationMode.Ready:
                     if (controller.CanRecord)
-                        status.AppendLine("Ready to record");
+                        status.AppendLine("✅ Ready to record");
                     if (controller.CanPlayback)
-                        status.AppendLine("Ready to playback");
+                        status.AppendLine("✅ Ready to playback");
                     break;
             }
             
             // Available recordings
             if (availableRecordings.Count > 0)
             {
-                status.AppendLine($"Recordings available: {availableRecordings.Count}");
+                status.AppendLine($"💾 Recordings available: {availableRecordings.Count}");
             }
             else
             {
-                status.AppendLine("No recordings found");
+                status.AppendLine("💾 No recordings found");
             }
             
             return status.ToString();
@@ -386,6 +457,31 @@ namespace BodyTracking.UI
         {
             RefreshRecordingsList();
             UpdateUI();
+        }
+        
+        private void OnOrientationChanged(ScreenOrientation newOrientation)
+        {
+            UpdateUI(); // Refresh UI to show new orientation status
+        }
+        
+        private void OnBodyTrackingOptimalChanged(bool isOptimal)
+        {
+            UpdateUI(); // Refresh UI to show tracking status change
+            
+            if (isOptimal)
+            {
+                Debug.Log("[BodyTrackingUI] ✅ Orientation now optimal for body tracking");
+            }
+            else
+            {
+                Debug.LogWarning("[BodyTrackingUI] ⚠️ Orientation not optimal for body tracking");
+            }
+        }
+        
+        private void OnTrackingIssueDetected(string issue)
+        {
+            Debug.LogWarning($"[BodyTrackingUI] Tracking Issue: {issue}");
+            UpdateUI(); // Refresh UI to show tracking issues
         }
 
         #endregion

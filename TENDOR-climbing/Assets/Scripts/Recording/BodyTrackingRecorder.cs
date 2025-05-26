@@ -3,6 +3,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using BodyTracking.Data;
 using BodyTracking.Animation;
+using BodyTracking.AR;
 using System;
 using Unity.XR.CoreUtils;
 
@@ -21,10 +22,15 @@ namespace BodyTracking.Recording
         [SerializeField] private FBXCharacterController characterController;
         [SerializeField] private bool autoFindCharacterController = true;
         
+        [Header("Orientation Handling")]
+        [SerializeField] private bool warnAboutPortraitMode = true;
+        [SerializeField] private int maxConsecutiveFailures = 90; // 3 seconds at 30fps
+        
         // Dependencies
         private ARHumanBodyManager bodyManager;
         private Transform imageTargetTransform;
         private CoordinateFrame referenceFrame;
+        private OrientationManager orientationManager;
         
         // Recording state
         private HipRecording currentRecording;
@@ -32,17 +38,25 @@ namespace BodyTracking.Recording
         private float recordingStartTime;
         private float nextRecordTime;
         
+        // Tracking state
+        private int consecutiveFailures = 0;
+        private bool hasShownOrientationWarning = false;
+        private float lastSuccessfulTrackingTime = 0f;
+        
         // Visualization
         private GameObject hipVisualizationSphere;
         
         // Events
         public event System.Action<HipRecording> OnRecordingComplete;
         public event System.Action<float> OnRecordingProgress;
+        public event System.Action<string> OnTrackingIssueDetected;
         
         // Public properties
         public bool IsRecording => isRecording;
         public float RecordingDuration => isRecording ? Time.time - recordingStartTime : 0f;
         public HipRecording LastRecording => currentRecording;
+        public bool HasRecentSuccessfulTracking => (Time.time - lastSuccessfulTrackingTime) < 5f;
+        public int ConsecutiveFailures => consecutiveFailures;
 
         /// <summary>
         /// Initialize the recorder with required dependencies
@@ -70,8 +84,40 @@ namespace BodyTracking.Recording
             // Setup character controller integration
             SetupCharacterController();
             
+            // Find orientation manager
+            orientationManager = FindFirstObjectByType<OrientationManager>();
+            if (orientationManager != null)
+            {
+                orientationManager.OnOrientationChanged += OnOrientationChanged;
+                UnityEngine.Debug.Log("[BodyTrackingRecorder] Connected to OrientationManager");
+            }
+            
            UnityEngine.Debug.Log($"[BodyTrackingRecorder] Initialized - showVisualization: {showVisualization}, targetFrameRate: {targetFrameRate}");
             return true;
+        }
+
+        /// <summary>
+        /// Handle orientation changes
+        /// </summary>
+        private void OnOrientationChanged(ScreenOrientation newOrientation)
+        {
+            bool isPortrait = newOrientation == ScreenOrientation.Portrait || newOrientation == ScreenOrientation.PortraitUpsideDown;
+            
+            if (isPortrait && warnAboutPortraitMode && !hasShownOrientationWarning)
+            {
+                string warning = "⚠️ Portrait orientation detected - ARKit body tracking may not work properly. Consider rotating to landscape for better results.";
+                UnityEngine.Debug.LogWarning($"[BodyTrackingRecorder] {warning}");
+                OnTrackingIssueDetected?.Invoke(warning);
+                hasShownOrientationWarning = true;
+            }
+            else if (!isPortrait)
+            {
+                hasShownOrientationWarning = false; // Reset warning for next portrait switch
+                if (consecutiveFailures > 10)
+                {
+                    UnityEngine.Debug.Log("[BodyTrackingRecorder] ✅ Switched to landscape - body tracking should improve");
+                }
+            }
         }
 
         /// <summary>
@@ -240,6 +286,8 @@ namespace BodyTracking.Recording
                     );
                     
                     foundValidJoint = true;
+                    consecutiveFailures = 0; // Reset failure counter
+                    lastSuccessfulTrackingTime = Time.time;
                     
                     // Update visualization
                     if (showVisualization)
@@ -251,14 +299,105 @@ namespace BodyTracking.Recording
                 break; // Use first tracked body only
             }
             
-            // Debug logging for tracking issues
-            if (!foundValidJoint && currentRecording.FrameCount % 90 == 0) // Reduced frequency from 30 to 90
+            // Handle tracking failures
+            if (!foundValidJoint)
             {
-               UnityEngine.Debug.LogWarning($"[BodyTrackingRecorder] No valid joint data found at frame {currentRecording.FrameCount}");
+                consecutiveFailures++;
+                
+                // Provide helpful feedback based on failure patterns
+                if (consecutiveFailures == 30) // 1 second of failures
+                {
+                    CheckAndReportTrackingIssues();
+                }
+                else if (consecutiveFailures % 90 == 0) // Every 3 seconds
+                {
+                    UnityEngine.Debug.LogWarning($"[BodyTrackingRecorder] No valid joint data found at frame {currentRecording.FrameCount} (consecutive failures: {consecutiveFailures})");
+                    CheckAndReportTrackingIssues();
+                }
             }
             
             // Always add frame (even if no body detected) to maintain timing
             currentRecording.frames.Add(frame);
+        }
+
+        /// <summary>
+        /// Check for common tracking issues and provide helpful feedback
+        /// </summary>
+        private void CheckAndReportTrackingIssues()
+        {
+            string issue = "";
+            
+            // Check orientation
+            if (orientationManager != null && !orientationManager.IsBodyTrackingOptimal)
+            {
+                issue = $"Device orientation issue: {orientationManager.GetOrientationRecommendation()}";
+            }
+            // Check if body manager is enabled
+            else if (bodyManager == null || !bodyManager.enabled)
+            {
+                issue = "ARHumanBodyManager is disabled or missing";
+            }
+            // Check tracking state
+            else if (bodyManager.trackables.count == 0)
+            {
+                issue = "No human bodies detected - ensure person is visible and well-lit";
+            }
+            else
+            {
+                // Check if bodies are tracked but joints are invalid
+                bool hasTrackedBodies = false;
+                foreach (var body in bodyManager.trackables)
+                {
+                    if (body.trackingState == TrackingState.Tracking)
+                    {
+                        hasTrackedBodies = true;
+                        break;
+                    }
+                }
+                
+                if (hasTrackedBodies)
+                {
+                    issue = "Human body detected but joint data is invalid - try moving or improving lighting";
+                }
+                else
+                {
+                    issue = "Human body tracking is limited - ensure person is fully visible";
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(issue))
+            {
+                UnityEngine.Debug.LogWarning($"[BodyTrackingRecorder] Tracking issue: {issue}");
+                OnTrackingIssueDetected?.Invoke(issue);
+            }
+        }
+
+        /// <summary>
+        /// Get tracking status summary including orientation info
+        /// </summary>
+        public string GetTrackingStatusSummary()
+        {
+            string status = $"Recording: {isRecording}\n";
+            status += $"Frame Count: {(currentRecording?.FrameCount ?? 0)}\n";
+            status += $"Consecutive Failures: {consecutiveFailures}\n";
+            status += $"Recent Success: {HasRecentSuccessfulTracking}\n";
+            
+            if (orientationManager != null)
+            {
+                status += $"Orientation: {orientationManager.GetBodyTrackingStatusSummary()}\n";
+            }
+            else
+            {
+                status += $"Orientation: {Screen.orientation}\n";
+            }
+            
+            if (bodyManager != null)
+            {
+                status += $"Bodies Tracked: {bodyManager.trackables.count}\n";
+                status += $"Body Manager Enabled: {bodyManager.enabled}\n";
+            }
+            
+            return status;
         }
 
         /// <summary>
