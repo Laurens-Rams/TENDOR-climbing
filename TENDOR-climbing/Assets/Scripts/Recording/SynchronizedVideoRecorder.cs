@@ -150,6 +150,18 @@ namespace BodyTracking.Recording
             // Output settings
             videoCapture.OutputTarget = OutputTarget.VideoFile;
             
+            // Only override output folder settings if not already configured
+            if (string.IsNullOrEmpty(videoCapture.OutputFolderPath) || videoCapture.OutputFolderPath == "Captures")
+            {
+                videoCapture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
+                videoCapture.OutputFolderPath = videoOutputFolder;
+                Debug.Log($"[SynchronizedVideoRecorder] Set output folder to: {videoOutputFolder}");
+            }
+            else
+            {
+                Debug.Log($"[SynchronizedVideoRecorder] Using existing output folder: {videoCapture.OutputFolderPath}");
+            }
+            
             // Subscribe to events
             videoCapture.OnCaptureStart.AddListener(OnVideoCaptureStarted);
             videoCapture.CompletedFileWritingAction += OnVideoCaptureCompleted;
@@ -234,11 +246,9 @@ namespace BodyTracking.Recording
             // Create recording texture
             CreateRecordingTexture();
             
-            // Setup video file path
+            // Setup video file naming (don't override folder settings)
             videoCapture.AppendFilenameTimestamp = true;
             videoCapture.FilenamePrefix = filePrefix;
-            videoCapture.OutputFolder = CaptureBase.OutputPath.RelativeToPersistentData;
-            videoCapture.OutputFolderPath = videoOutputFolder;
             videoCapture.FilenameExtension = ".mp4";
             
             // Set the source texture
@@ -436,6 +446,20 @@ namespace BodyTracking.Recording
         /// </summary>
         private string GetOutputFolderPath()
         {
+            if (videoCapture != null && !string.IsNullOrEmpty(videoCapture.OutputFolderPath))
+            {
+                // Use the actual folder path from the video capture component
+                if (videoCapture.OutputFolder == CaptureBase.OutputPath.RelativeToPersistentData)
+                {
+                    return Path.Combine(Application.persistentDataPath, videoCapture.OutputFolderPath);
+                }
+                else
+                {
+                    return videoCapture.OutputFolderPath;
+                }
+            }
+            
+            // Fallback to default
             return Path.Combine(Application.persistentDataPath, videoOutputFolder);
         }
 
