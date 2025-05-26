@@ -164,16 +164,36 @@ namespace BodyTracking.Recording
         {
             int width, height;
             
-            if (useARCameraResolution && arCameraManager.currentConfiguration.HasValue)
+            if (useARCameraResolution)
             {
-                var config = arCameraManager.currentConfiguration.Value;
-                width = (int)config.width;
-                height = (int)config.height;
+                // Use Globals.CameraManager like the working old VideoRecorder
+                if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
+                {
+                    var config = Globals.CameraManager.currentConfiguration.Value;
+                    width = (int)config.width;
+                    height = (int)config.height;
+                    Debug.Log($"[SynchronizedVideoRecorder] Using AR camera resolution from Globals: {width}x{height}");
+                }
+                else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+                {
+                    var config = arCameraManager.currentConfiguration.Value;
+                    width = (int)config.width;
+                    height = (int)config.height;
+                    Debug.Log($"[SynchronizedVideoRecorder] Using AR camera resolution from arCameraManager: {width}x{height}");
+                }
+                else
+                {
+                    // Fallback to custom resolution
+                    width = customResolution.x;
+                    height = customResolution.y;
+                    Debug.LogWarning($"[SynchronizedVideoRecorder] No AR camera configuration available, using custom resolution: {width}x{height}");
+                }
             }
             else
             {
                 width = customResolution.x;
                 height = customResolution.y;
+                Debug.Log($"[SynchronizedVideoRecorder] Using custom resolution: {width}x{height}");
             }
             
             // Create texture for recording
@@ -242,8 +262,22 @@ namespace BodyTracking.Recording
                 return false;
             }
             
-            // Subscribe to AR camera frame events
-            arCameraManager.frameReceived += OnARCameraFrameReceived;
+            // Subscribe to AR camera frame events - use Globals.CameraManager like the working old VideoRecorder
+            if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived += OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Subscribed to Globals.CameraManager.frameReceived");
+            }
+            else if (arCameraManager != null)
+            {
+                arCameraManager.frameReceived += OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Subscribed to arCameraManager.frameReceived");
+            }
+            else
+            {
+                Debug.LogError("[SynchronizedVideoRecorder] No camera manager available for frame events");
+                return false;
+            }
             
             isRecording = true;
             
@@ -260,8 +294,18 @@ namespace BodyTracking.Recording
         {
             if (!isRecording || recordingTexture == null) return;
             
-            // Try to acquire the latest CPU image
-            if (!arCameraManager.TryAcquireLatestCpuImage(out cpuImage))
+            // Try to acquire the latest CPU image using Globals.CameraManager like the working old VideoRecorder
+            bool imageAcquired = false;
+            if (Globals.CameraManager != null)
+            {
+                imageAcquired = Globals.CameraManager.TryAcquireLatestCpuImage(out cpuImage);
+            }
+            else if (arCameraManager != null)
+            {
+                imageAcquired = arCameraManager.TryAcquireLatestCpuImage(out cpuImage);
+            }
+            
+            if (!imageAcquired)
                 return;
             
             try
@@ -305,9 +349,15 @@ namespace BodyTracking.Recording
             isRecording = false;
             
             // Unsubscribe from AR camera events
-            if (arCameraManager != null)
+            if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Unsubscribed from Globals.CameraManager.frameReceived");
+            }
+            else if (arCameraManager != null)
             {
                 arCameraManager.frameReceived -= OnARCameraFrameReceived;
+                Debug.Log("[SynchronizedVideoRecorder] Unsubscribed from arCameraManager.frameReceived");
             }
             
             // Stop video recording
@@ -477,10 +527,20 @@ namespace BodyTracking.Recording
             summary += $"Session ID: {currentSessionId}\n";
             summary += $"Frame Count: {frameCount}\n";
             
-            if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
+            // Check Globals.CameraManager first (like the working old VideoRecorder)
+            if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
+            {
+                var config = Globals.CameraManager.currentConfiguration.Value;
+                summary += $"AR Camera (Globals): {config.width}x{config.height}\n";
+            }
+            else if (arCameraManager != null && arCameraManager.currentConfiguration.HasValue)
             {
                 var config = arCameraManager.currentConfiguration.Value;
-                summary += $"AR Camera: {config.width}x{config.height}\n";
+                summary += $"AR Camera (Local): {config.width}x{config.height}\n";
+            }
+            else
+            {
+                summary += "AR Camera: Not configured\n";
             }
             
             if (recordingTexture != null)
@@ -508,7 +568,11 @@ namespace BodyTracking.Recording
         void OnDestroy()
         {
             // Unsubscribe from events
-            if (arCameraManager != null)
+            if (Globals.CameraManager != null)
+            {
+                Globals.CameraManager.frameReceived -= OnARCameraFrameReceived;
+            }
+            else if (arCameraManager != null)
             {
                 arCameraManager.frameReceived -= OnARCameraFrameReceived;
             }
