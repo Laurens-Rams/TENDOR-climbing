@@ -11,6 +11,13 @@ namespace BodyTracking.AR
         public ARTrackedImageManager trackedImageManager;
         public string targetImageName = "Wall 1";
         
+        [Header("Wall Configuration")]
+        [SerializeField] private Vector2 realWorldWallSize = new Vector2(2f, 3f); // Default 2m x 3m wall
+        [SerializeField] private bool autoScaleToImageTarget = true;
+        [SerializeField] private bool maintainAspectRatio = true;
+        [SerializeField] private Vector3 wallRotationOffset = new Vector3(90f, 0f, 0f); // Rotation correction - 90° X to make wall upright
+        [SerializeField] private Vector3 wallPositionOffset = Vector3.zero; // Position offset from image center
+        
         private ARTrackedImage currentTrackedImage;
         private bool isImageDetected = false;
         private bool contentAttachedToTarget = false;
@@ -25,6 +32,7 @@ namespace BodyTracking.AR
         
         public bool IsImageDetected => isImageDetected && currentTrackedImage != null && currentTrackedImage.trackingState == TrackingState.Tracking;
         public Transform ImageTargetTransform => (IsImageDetected) ? currentTrackedImage.transform : null;
+        public Vector2 RealWorldWallSize => realWorldWallSize;
 
         void OnEnable()
         {
@@ -118,15 +126,17 @@ namespace BodyTracking.AR
             
             if (activeContent != null)
             {
-                // Attach content to the tracked image (like TrackingLogic)
+                // Attach content to the tracked image
                 activeContent.transform.parent = trackedImage.transform;
-                activeContent.transform.localPosition = Vector3.zero;
-                activeContent.transform.localRotation = Quaternion.identity;
+                
+                // Apply proper positioning and scaling
+                SetupWallTransform(trackedImage, activeContent);
                 
                 // Activate the content
                 activeContent.SetActive(true);
                 
                 Debug.Log($"[ARImageTargetManager] Activated content '{activeContent.name}' for image '{trackedImage.referenceImage.name}'");
+                Debug.Log($"[ARImageTargetManager] Wall size: {realWorldWallSize}, Image size: {trackedImage.size}");
             }
             else
             {
@@ -140,6 +150,120 @@ namespace BodyTracking.AR
             Debug.Log($"[ARImageTargetManager] Content successfully attached to image target at position: {trackedImage.transform.position}");
             
             return true;
+        }
+
+        /// <summary>
+        /// Setup the wall transform based on image target size and real-world wall dimensions
+        /// </summary>
+        private void SetupWallTransform(ARTrackedImage trackedImage, GameObject wallContent)
+        {
+            // Start with base position and rotation
+            wallContent.transform.localPosition = wallPositionOffset;
+            wallContent.transform.localRotation = Quaternion.Euler(wallRotationOffset);
+            
+            Debug.Log($"[ARImageTargetManager] Applied wall rotation offset: {wallRotationOffset} (Euler angles)");
+            Debug.Log($"[ARImageTargetManager] Applied wall position offset: {wallPositionOffset}");
+            
+            if (autoScaleToImageTarget)
+            {
+                Vector3 targetScale = CalculateWallScale(trackedImage);
+                wallContent.transform.localScale = targetScale;
+                
+                Debug.Log($"[ARImageTargetManager] Applied wall scale: {targetScale}");
+            }
+            else
+            {
+                // Use real-world dimensions directly
+                wallContent.transform.localScale = new Vector3(realWorldWallSize.x, realWorldWallSize.y, 1f);
+                Debug.Log($"[ARImageTargetManager] Applied fixed wall scale: {new Vector3(realWorldWallSize.x, realWorldWallSize.y, 1f)}");
+            }
+            
+            Debug.Log($"[ARImageTargetManager] Final wall transform - Position: {wallContent.transform.position}, Rotation: {wallContent.transform.rotation.eulerAngles}, Scale: {wallContent.transform.localScale}");
+        }
+
+        /// <summary>
+        /// Calculate the appropriate scale for the wall based on image target size
+        /// </summary>
+        private Vector3 CalculateWallScale(ARTrackedImage trackedImage)
+        {
+            Vector2 imageSize = trackedImage.size;
+            
+            if (imageSize.x <= 0 || imageSize.y <= 0)
+            {
+                Debug.LogWarning("[ARImageTargetManager] Invalid image size, using default scale");
+                return new Vector3(realWorldWallSize.x, realWorldWallSize.y, 1f);
+            }
+            
+            Vector3 scale;
+            
+            if (maintainAspectRatio)
+            {
+                // Scale based on the larger dimension to ensure wall fits
+                float imageAspect = imageSize.x / imageSize.y;
+                float wallAspect = realWorldWallSize.x / realWorldWallSize.y;
+                
+                if (imageAspect > wallAspect)
+                {
+                    // Image is wider relative to wall - scale based on width
+                    float scaleX = realWorldWallSize.x / imageSize.x;
+                    scale = new Vector3(realWorldWallSize.x, realWorldWallSize.x / imageAspect, 1f);
+                }
+                else
+                {
+                    // Image is taller relative to wall - scale based on height
+                    float scaleY = realWorldWallSize.y / imageSize.y;
+                    scale = new Vector3(realWorldWallSize.y * imageAspect, realWorldWallSize.y, 1f);
+                }
+            }
+            else
+            {
+                // Scale each dimension independently
+                scale = new Vector3(realWorldWallSize.x, realWorldWallSize.y, 1f);
+            }
+            
+            return scale;
+        }
+
+        /// <summary>
+        /// Update wall size at runtime (for when users change wall dimensions)
+        /// </summary>
+        public void UpdateWallSize(Vector2 newWallSize)
+        {
+            realWorldWallSize = newWallSize;
+            
+            if (activeContent != null && currentTrackedImage != null)
+            {
+                SetupWallTransform(currentTrackedImage, activeContent);
+                Debug.Log($"[ARImageTargetManager] Updated wall size to: {newWallSize}");
+            }
+        }
+
+        /// <summary>
+        /// Update wall rotation offset
+        /// </summary>
+        public void UpdateWallRotation(Vector3 rotationOffset)
+        {
+            wallRotationOffset = rotationOffset;
+            
+            if (activeContent != null)
+            {
+                activeContent.transform.localRotation = Quaternion.Euler(wallRotationOffset);
+                Debug.Log($"[ARImageTargetManager] Updated wall rotation to: {rotationOffset}");
+            }
+        }
+
+        /// <summary>
+        /// Update wall position offset
+        /// </summary>
+        public void UpdateWallPosition(Vector3 positionOffset)
+        {
+            wallPositionOffset = positionOffset;
+            
+            if (activeContent != null)
+            {
+                activeContent.transform.localPosition = wallPositionOffset;
+                Debug.Log($"[ARImageTargetManager] Updated wall position to: {positionOffset}");
+            }
         }
 
         private void HandleImageRemoved(ARTrackedImage trackedImage)
