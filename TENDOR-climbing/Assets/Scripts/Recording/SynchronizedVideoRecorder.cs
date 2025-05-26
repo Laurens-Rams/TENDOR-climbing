@@ -175,10 +175,29 @@ namespace BodyTracking.Recording
         private void CreateRecordingTexture()
         {
             int width, height;
+            bool usedActualImageSize = false;
             
-            if (useARCameraResolution)
+            // First try to get actual camera image size (most accurate)
+            XRCpuImage testImage;
+            if (Globals.CameraManager != null && Globals.CameraManager.TryAcquireLatestCpuImage(out testImage))
             {
-                // Use Globals.CameraManager like the working old VideoRecorder
+                width = testImage.width;
+                height = testImage.height;
+                usedActualImageSize = true;
+                testImage.Dispose();
+                Debug.Log($"[SynchronizedVideoRecorder] Using actual camera image size: {width}x{height}");
+            }
+            else if (arCameraManager != null && arCameraManager.TryAcquireLatestCpuImage(out testImage))
+            {
+                width = testImage.width;
+                height = testImage.height;
+                usedActualImageSize = true;
+                testImage.Dispose();
+                Debug.Log($"[SynchronizedVideoRecorder] Using actual camera image size from arCameraManager: {width}x{height}");
+            }
+            else if (useARCameraResolution)
+            {
+                // Fall back to configuration-based resolution
                 if (Globals.CameraManager != null && Globals.CameraManager.currentConfiguration.HasValue)
                 {
                     var config = Globals.CameraManager.currentConfiguration.Value;
@@ -210,9 +229,11 @@ namespace BodyTracking.Recording
             
             // Create texture for recording
             recordingTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            recordingTexture.name = "[SynchronizedVideoRecorder] Recording Texture";
+            recordingTexture.name = usedActualImageSize ? 
+                "[SynchronizedVideoRecorder] Recording Texture (Actual Size)" : 
+                "[SynchronizedVideoRecorder] Recording Texture (Config Size)";
             
-            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height}");
+            Debug.Log($"[SynchronizedVideoRecorder] Created recording texture: {width}x{height} (Actual image size: {usedActualImageSize})");
         }
 
         /// <summary>
@@ -320,9 +341,36 @@ namespace BodyTracking.Recording
             
             try
             {
+                // Check if texture size matches the camera image size
+                if (recordingTexture.width != cpuImage.width || recordingTexture.height != cpuImage.height)
+                {
+                    Debug.LogWarning($"[SynchronizedVideoRecorder] Texture size mismatch! Texture: {recordingTexture.width}x{recordingTexture.height}, Camera: {cpuImage.width}x{cpuImage.height}");
+                    
+                    // Recreate texture with correct size
+                    DestroyImmediate(recordingTexture);
+                    recordingTexture = new Texture2D(cpuImage.width, cpuImage.height, TextureFormat.RGBA32, false);
+                    recordingTexture.name = "[SynchronizedVideoRecorder] Recording Texture (Resized)";
+                    
+                    // Update the video capture source texture
+                    videoCapture.SetSourceTexture(recordingTexture);
+                    
+                    Debug.Log($"[SynchronizedVideoRecorder] Recreated texture with camera size: {cpuImage.width}x{cpuImage.height}");
+                }
+                
                 // Convert the image to the texture format
                 var conversionParams = new XRCpuImage.ConversionParams(cpuImage, TextureFormat.RGBA32, XRCpuImage.Transformation.MirrorY);
                 var data = recordingTexture.GetRawTextureData<byte>();
+                
+                // Verify buffer sizes match
+                int requiredBytes = cpuImage.GetConvertedDataSize(conversionParams);
+                int availableBytes = data.Length;
+                
+                if (requiredBytes != availableBytes)
+                {
+                    Debug.LogError($"[SynchronizedVideoRecorder] Buffer size mismatch! Required: {requiredBytes}, Available: {availableBytes}");
+                    return;
+                }
+                
                 cpuImage.Convert(conversionParams, data);
                 
                 // Apply the texture changes
