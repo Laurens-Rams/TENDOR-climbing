@@ -173,10 +173,10 @@ namespace TENDOR.Tests.Editor
         [Test]
         public void GameState_EnumValues()
         {
-            Assert.AreEqual(0, (int)TENDOR.Services.GameState.Idle);
-            Assert.AreEqual(1, (int)TENDOR.Services.GameState.Recording);
-            Assert.AreEqual(2, (int)TENDOR.Services.GameState.Processing);
-            Assert.AreEqual(3, (int)TENDOR.Services.GameState.Playback);
+            Assert.AreEqual(0, (int)GameState.Idle);
+            Assert.AreEqual(1, (int)GameState.Recording);
+            Assert.AreEqual(2, (int)GameState.Processing);
+            Assert.AreEqual(3, (int)GameState.Playback);
         }
 
         [Test]

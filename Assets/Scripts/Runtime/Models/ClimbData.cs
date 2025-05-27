@@ -80,6 +80,17 @@ namespace TENDOR.Runtime.Models
     }
 
     /// <summary>
+    /// Simple game state enum for compatibility
+    /// </summary>
+    public enum GameState
+    {
+        Idle,
+        Recording,
+        Processing,
+        Playback
+    }
+
+    /// <summary>
     /// Climb processing status
     /// </summary>
     public enum ClimbStatus

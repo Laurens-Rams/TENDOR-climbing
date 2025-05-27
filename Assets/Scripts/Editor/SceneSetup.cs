@@ -4,6 +4,7 @@ using UnityEditor.SceneManagement;
 using TENDOR.Services;
 using TENDOR.Services.AR;
 using TENDOR.Services.Firebase;
+using TENDOR.Recording;
 using TENDOR.Testing;
 
 namespace TENDOR.Editor
@@ -22,13 +23,6 @@ namespace TENDOR.Editor
             {
                 servicesGO = new GameObject("Services");
                 servicesGO.transform.position = Vector3.zero;
-            }
-
-            // Add GameStateManager
-            if (servicesGO.GetComponent<GameStateManager>() == null)
-            {
-                servicesGO.AddComponent<GameStateManager>();
-                Debug.Log("✅ Added GameStateManager");
             }
 
             // Add FirebaseService
@@ -60,6 +54,35 @@ namespace TENDOR.Editor
                 Debug.Log("✅ Added CompilationTest (run on start enabled)");
             }
 
+            // Create BodyTrackingSystem GameObject
+            GameObject bodyTrackingGO = GameObject.Find("BodyTrackingSystem");
+            if (bodyTrackingGO == null)
+            {
+                bodyTrackingGO = new GameObject("BodyTrackingSystem");
+                bodyTrackingGO.transform.position = Vector3.zero;
+            }
+
+            // Add BodyTrackingController
+            if (bodyTrackingGO.GetComponent<BodyTrackingController>() == null)
+            {
+                bodyTrackingGO.AddComponent<BodyTrackingController>();
+                Debug.Log("✅ Added BodyTrackingController");
+            }
+
+            // Add BodyTrackingRecorder
+            if (bodyTrackingGO.GetComponent<BodyTrackingRecorder>() == null)
+            {
+                bodyTrackingGO.AddComponent<BodyTrackingRecorder>();
+                Debug.Log("✅ Added BodyTrackingRecorder");
+            }
+
+            // Add BodyTrackingPlayer
+            if (bodyTrackingGO.GetComponent<BodyTrackingPlayer>() == null)
+            {
+                bodyTrackingGO.AddComponent<BodyTrackingPlayer>();
+                Debug.Log("✅ Added BodyTrackingPlayer");
+            }
+
             // Add AR Remote Test Manager
             GameObject testManagerGO = GameObject.Find("AR Remote Test Manager");
             if (testManagerGO == null)
@@ -76,33 +99,57 @@ namespace TENDOR.Editor
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             
             Debug.Log("🎉 Scene setup complete! Ready for testing.");
-            Debug.Log("📋 Services added: GameStateManager, FirebaseService, ARService, CompilationTest, ARRemoteTestManager");
-            Debug.Log("🎮 Test Controls: D=Debug, R=Record, S=Stop, Space=Switch State");
+            Debug.Log("📋 Services added: BodyTrackingController, FirebaseService, ARService, CompilationTest, ARRemoteTestManager");
+            Debug.Log("🎮 Test Controls: D=Debug, R=Record, S=Stop, P=Play");
         }
 
         [MenuItem("TENDOR/Fix AR Camera Setup")]
         public static void FixARCameraSetup()
         {
-            // Find XR Origin
+            Debug.Log("🔧 Fixing AR Camera setup...");
+
+            // Find XR Origin and camera
             var xrOrigin = Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
             if (xrOrigin == null)
             {
-                Debug.LogError("❌ No XR Origin found in scene");
+                Debug.LogError("❌ XR Origin not found! Please add XR Origin to scene first.");
                 return;
             }
 
-            // Find the camera in XR Origin
-            Camera camera = xrOrigin.Camera;
+            var camera = xrOrigin.Camera;
             if (camera == null)
             {
-                // Look for camera in children
-                camera = xrOrigin.GetComponentInChildren<Camera>();
+                Debug.LogError("❌ Camera not found on XR Origin!");
+                return;
             }
 
-            if (camera == null)
+            // Add Tracked Pose Driver if missing
+            var trackedPoseDriver = camera.GetComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
+            if (trackedPoseDriver == null)
             {
-                Debug.LogError("❌ No Camera found in XR Origin");
-                return;
+                trackedPoseDriver = camera.gameObject.AddComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
+                
+                // Use default tracking - the component will automatically use XR head tracking
+                trackedPoseDriver.trackingType = UnityEngine.InputSystem.XR.TrackedPoseDriver.TrackingType.RotationAndPosition;
+                trackedPoseDriver.updateType = UnityEngine.InputSystem.XR.TrackedPoseDriver.UpdateType.UpdateAndBeforeRender;
+                
+                Debug.Log("✅ Added Tracked Pose Driver to Main Camera");
+            }
+            else
+            {
+                Debug.Log("📷 Tracked Pose Driver already exists");
+            }
+
+            // Add AR Camera Background if missing
+            var arCameraBackground = camera.GetComponent<UnityEngine.XR.ARFoundation.ARCameraBackground>();
+            if (arCameraBackground == null)
+            {
+                arCameraBackground = camera.gameObject.AddComponent<UnityEngine.XR.ARFoundation.ARCameraBackground>();
+                Debug.Log("✅ Added AR Camera Background to camera");
+            }
+            else
+            {
+                Debug.Log("🎥 AR Camera Background already exists");
             }
 
             // Add AR Camera Manager if missing
@@ -192,20 +239,20 @@ namespace TENDOR.Editor
             Debug.Log($"AR Camera: {(arCamera != null ? "✅ Found" : "❌ Missing")}");
 
             // Check for our services
-            var gameStateManager = Object.FindFirstObjectByType<GameStateManager>();
+            var bodyTrackingController = Object.FindFirstObjectByType<BodyTrackingController>();
             var firebaseService = Object.FindFirstObjectByType<FirebaseService>();
             var arService = Object.FindFirstObjectByType<ARService>();
             var compilationTest = Object.FindFirstObjectByType<CompilationTest>();
             var testManager = Object.FindFirstObjectByType<ARRemoteTestManager>();
 
-            Debug.Log($"GameStateManager: {(gameStateManager != null ? "✅ Found" : "❌ Missing")}");
+            Debug.Log($"BodyTrackingController: {(bodyTrackingController != null ? "✅ Found" : "❌ Missing")}");
             Debug.Log($"FirebaseService: {(firebaseService != null ? "✅ Found" : "❌ Missing")}");
             Debug.Log($"ARService: {(arService != null ? "✅ Found" : "❌ Missing")}");
             Debug.Log($"CompilationTest: {(compilationTest != null ? "✅ Found" : "❌ Missing")}");
             Debug.Log($"ARRemoteTestManager: {(testManager != null ? "✅ Found" : "❌ Missing")}");
 
             bool isReady = arSession != null && arSessionOrigin != null && 
-                          gameStateManager != null && firebaseService != null && arService != null;
+                          bodyTrackingController != null && firebaseService != null && arService != null;
 
             Debug.Log(isReady ? "🎉 Scene is ready for testing!" : "⚠️ Scene needs setup. Use 'TENDOR/Setup Scene for Testing'");
         }

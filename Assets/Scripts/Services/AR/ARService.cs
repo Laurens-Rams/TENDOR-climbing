@@ -298,7 +298,7 @@ namespace TENDOR.Services.AR
                 // Clean up texture for now
                 UnityEngine.Object.DestroyImmediate(texture);
                 
-                return true;
+                    return true;
             }
             catch (System.Exception e)
             {

@@ -4,6 +4,7 @@
     "references": [
         "TENDOR.Core",
         "TENDOR.Runtime",
+        "TENDOR.UI",
         "Unity.XR.ARFoundation",
         "Unity.XR.ARSubsystems",
         "Unity.XR.CoreUtils"

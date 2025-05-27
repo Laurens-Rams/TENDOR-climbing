@@ -251,6 +251,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   runTestOnStart: 1
+  logDetailedResults: 1
 --- !u!114 &389349894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299,6 +300,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initialState: 0
   enableStateLogging: 1
+  currentState: 0
+  previousState: 0
+  currentClimb:
+    id: 
+    ownerUid: 
+    boulderId: 
+    videoUrl: 
+    fbxUrl: 
+    jsonUrl: 
+    status: 0
+  currentVideoPath: 
+  isTransitioning: 0
 --- !u!4 &389349897
 Transform:
   m_ObjectHideFlags: 0
@@ -517,7 +530,7 @@ MonoBehaviour:
   toggleDebugKey: 100
   startRecordingKey: 114
   stopRecordingKey: 115
-  switchStateKey: 32
+  playbackKey: 112
 --- !u!4 &1444305870
 Transform:
   m_ObjectHideFlags: 0
@@ -525,6 +538,88 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1444305868}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1492688239
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1492688243}
+  - component: {fileID: 1492688242}
+  - component: {fileID: 1492688241}
+  - component: {fileID: 1492688240}
+  m_Layer: 0
+  m_Name: BodyTrackingSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1492688240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492688239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14681ab983146ca9cd820ff02c3aaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  loopPlayback: 0
+  playbackSpeed: 1
+  hipSpherePrefab: {fileID: 0}
+  sphereSize: 0.1
+  sphereColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &1492688241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492688239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7478155c8fa02476e8f3130252735189, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxRecordingFrames: 3000
+  logRecordingProgress: 1
+--- !u!114 &1492688242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492688239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6feccdf91ce1148ddbb706ac85c5d6d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  humanBodyManager: {fileID: 0}
+  enableVideoRecording: 1
+  recordingDirectory: BodyTrackingRecordings
+  recorder: {fileID: 0}
+  player: {fileID: 0}
+--- !u!4 &1492688243
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492688239}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -544,6 +639,9 @@ GameObject:
   - component: {fileID: 1665009551}
   - component: {fileID: 1665009553}
   - component: {fileID: 1665009552}
+  - component: {fileID: 1665009554}
+  - component: {fileID: 1665009556}
+  - component: {fileID: 1665009555}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -594,7 +692,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -635,6 +733,106 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &1665009554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665009550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f82cc229284894964d2d30806969d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HumanSegmentationStencilMode: 0
+  m_HumanSegmentationDepthMode: 0
+  m_EnvironmentDepthMode: 1
+  m_EnvironmentDepthTemporalSmoothing: 1
+  m_OcclusionPreferenceMode: 0
+--- !u!114 &1665009555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665009550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 816b289ef451e094f9ae174fb4cf8db0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_UseCustomMaterial: 0
+  m_CustomMaterial: {fileID: 0}
+--- !u!114 &1665009556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665009550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_IgnoreTrackingState: 0
+  m_PositionInput:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Position
+      m_Type: 0
+      m_ExpectedControlType: Vector3
+      m_Id: 8e0f0c9a-8483-49cf-9d7d-1f7354451758
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_RotationInput:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Rotation
+      m_Type: 0
+      m_ExpectedControlType: Quaternion
+      m_Id: 64ad84f1-4776-44e1-a679-e63aafcb5efd
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_TrackingStateInput:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Tracking State
+      m_Type: 0
+      m_ExpectedControlType: Integer
+      m_Id: b8f9dee6-45cf-4a98-9323-890a01651cbf
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_PositionAction:
+    m_Name: 
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: ac3eaceb-e9cf-4a44-8bc9-3adfe0cf8e4c
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
+  m_RotationAction:
+    m_Name: 
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 0633a57e-3fd1-4dd1-ba81-9190b289ff70
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
 --- !u!1 &1753788849
 GameObject:
   m_ObjectHideFlags: 0
@@ -698,6 +896,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initialState: 0
   enableStateLogging: 1
+  currentState: 0
+  previousState: 0
+  currentClimb:
+    id: 
+    ownerUid: 
+    boulderId: 
+    videoUrl: 
+    fbxUrl: 
+    jsonUrl: 
+    status: 0
+  currentVideoPath: 
+  isTransitioning: 0
 --- !u!4 &1770800682
 Transform:
   m_ObjectHideFlags: 0
@@ -806,3 +1016,4 @@ SceneRoots:
   - {fileID: 827923052}
   - {fileID: 1346994629}
   - {fileID: 389349897}
+  - {fileID: 1492688243}

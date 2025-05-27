@@ -1,0 +1,19 @@
+{
+    "name": "TENDOR.Recording",
+    "rootNamespace": "TENDOR.Recording",
+    "references": [
+        "TENDOR.Core",
+        "TENDOR.Runtime",
+        "Unity.XR.ARFoundation",
+        "Unity.XR.ARSubsystems"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 
